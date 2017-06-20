@@ -30,9 +30,10 @@ function preload() {
 }
 
 var sprite;
-const pi = Phaser.Math.degToRad(180); // FLIPPING PNG'S IS HARD
 
 function create() {
+
+    game.stage.backgroundColor = "#0000FF";
 
     sprite = game.add.sprite(game.world.centerX, game.world.centerY, 'ball');
     sprite.scale.setTo(.2, .2); // SCALING PNG'S IS HARD
@@ -48,7 +49,7 @@ function update() {
     // {
         //  400 is the speed it will move towards the mouse
         game.physics.arcade.moveToPointer(sprite, 400);
-        sprite.rotation = game.physics.arcade.angleToPointer(sprite) + pi;
+        sprite.rotation = game.physics.arcade.angleToPointer(sprite);
 
         //  if it's overlapping the mouse, don't move any more
         if (Phaser.Rectangle.contains(sprite.body, game.input.x, game.input.y))
