@@ -40,26 +40,22 @@ function create() {
     sprite.anchor.setTo(.5, .5);
     game.physics.enable(sprite, Phaser.Physics.ARCADE);
 
+    sprite.body.debug = true;
+
 }
 
 function update() {
 
-    // //  only move when you click
-    // if (game.input.mousePointer.isDown)
-    // {
-        //  400 is the speed it will move towards the mouse
-        game.physics.arcade.moveToPointer(sprite, 400);
-        sprite.rotation = game.physics.arcade.angleToPointer(sprite);
+    //  400 is the speed it will move towards the mouse
+    game.physics.arcade.moveToPointer(sprite, 400);
+    sprite.rotation = game.physics.arcade.angleToPointer(sprite);
 
-        //  if it's overlapping the mouse, don't move any more
-        if (Phaser.Rectangle.contains(sprite.body, game.input.x, game.input.y))
-        {
-            sprite.body.velocity.setTo(0, 0);
-        }
-    // }
-    // else
-    // {
-    //     sprite.body.velocity.setTo(0, 0);
-    // }
+    //  if it's overlapping the mouse, don't move any more
+    if (Phaser.Rectangle.contains(sprite.body, game.input.x, game.input.y))
+    {
+        sprite.body.velocity.setTo(0, 0);
+    }
+        
+    game.debug.body(sprite);
 
 }
