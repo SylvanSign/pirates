@@ -41,7 +41,7 @@ defmodule Pirates.GameServer do
         :ets.insert(table, {calling_pid, state})
         :ok
       [] ->
-        {:error, "pid #{inspect(calling_pid)} is not registered on this server"}
+        {:error, "#{inspect(calling_pid)} is not registered on this server"}
     end
   end
 
@@ -77,7 +77,7 @@ defmodule Pirates.GameServer do
       Process.monitor(from_pid)
       {:reply, {:ok, table}, table}
     else
-      {:reply, {:error, "pid #{inspect(from_pid)} is already registered on this server"}, table}
+      {:reply, {:error, "#{inspect(from_pid)} is already registered on this server"}, table}
     end
   end
 
