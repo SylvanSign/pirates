@@ -73,12 +73,11 @@ defmodule Pirates.GameServer do
   end
 
   def handle_call(:register, {from_pid, _}, table) do
-    case :ets.insert_new(table, {from_pid, %{}}) do
-      true  ->
-        Process.monitor(from_pid)
-        {:reply, {:ok, table}, table}
-      false ->
-        {:reply, {:error, "pid #{inspect(from_pid)} is already registered on this server"}, table}
+    if :ets.insert_new(table, {from_pid, %{}}) do
+      Process.monitor(from_pid)
+      {:reply, {:ok, table}, table}
+    else
+      {:reply, {:error, "pid #{inspect(from_pid)} is already registered on this server"}, table}
     end
   end
 
