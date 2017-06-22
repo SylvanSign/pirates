@@ -32,6 +32,13 @@ defmodule Pirates.GameServer do
   end
 
   @doc """
+  Returns the table id of the given game server
+  """
+  def table(pid \\ @name) do
+    GenServer.call(pid, :table)
+  end
+
+  @doc """
   Updates state of the calling process in the given table
   """
   def update_state(table, state) do
@@ -79,6 +86,10 @@ defmodule Pirates.GameServer do
     else
       {:reply, {:error, "#{inspect(from_pid)} is already registered on this server"}, table}
     end
+  end
+
+  def handle_call(:table, _from, table) do
+    {:reply, table, table}
   end
 
   # handle notifications of dead monitored processes

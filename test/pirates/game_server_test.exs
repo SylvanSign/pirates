@@ -37,7 +37,7 @@ defmodule Pirates.GameServerTest do
     assert {:ok, {:error, _}} = Task.yield(task)
   end
 
-  test "states returns a list of all states", %{pid: pid, table: table} do
+  test "states returns a list of all states o a registered process", %{pid: pid, table: table} do
     assert [] == GameServer.states(table)
 
     :ok = GameServer.update_state(table, %{id: "foo"})
@@ -51,6 +51,16 @@ defmodule Pirates.GameServerTest do
     results = Task.yield(task)
     assert {:ok, [%{id: "foo"}, %{id: "bar"}]} == results
       or   {:ok, [%{id: "bar"}, %{id: "foo"}]} == results # no order to the ets table
+  end
+
+  test "states returns a list of all states regardless of registration", %{table: table} do
+    assert [] == GameServer.states(table)
+
+    task = Task.async fn ->
+      GameServer.states(table)
+    end
+    results = Task.yield(task)
+    assert {:ok, []} == results
   end
 
   test "states is automatically 'garbage collected' when a registered process dies", %{pid: pid, table: table} do
@@ -69,5 +79,14 @@ defmodule Pirates.GameServerTest do
     # send a bogus synchronous request to ensure the game server has also processed the :DOWN event
     GameServer.register(pid)
     assert [%{id: "foo"}] == GameServer.states(table)
+  end
+
+  test "table returns the ets table id regardless of registration", %{pid: pid, table: table} do
+    assert GameServer.table(pid) == table
+    task = Task.async fn ->
+      GameServer.table(pid)
+    end
+    assert {:ok, task_table} = Task.yield(task)
+    assert task_table == table
   end
 end
