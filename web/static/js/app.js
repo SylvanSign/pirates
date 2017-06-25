@@ -25,65 +25,73 @@ var game = new Phaser.Game('100', '100', Phaser.AUTO, 'phaser-example', { preloa
 
 function preload() {
 
-    game.load.image('ball', 'images/pirate.png');
+    game.load.image('pirate', 'images/pirate.png');
 
 }
 
-var sprite;
-var bmd;
+var player;
+var gameWorld;
 
 function create() {
 
     game.stage.backgroundColor = "#0000FF";
 
-    sprite = game.add.sprite(game.world.centerX, game.world.centerY, 'ball');
-    sprite.scale.setTo(.2, .2); // SCALING PNG'S IS HARD
-    sprite.anchor.setTo(.5, .5);
-    game.physics.enable(sprite, Phaser.Physics.ARCADE);
+    player = game.add.sprite(game.world.centerX, game.world.centerY, 'pirate');
+    player.anchor.setTo(.5, .5);
+    game.physics.enable(player, Phaser.Physics.ARCADE);
+    player.body.setCircle(player.width / 2, 0, 0);
+    player.body.debug = true;
 
-    sprite.body.debug = true;
-
-    bmd = game.add.bitmapData(game.width, game.height);
-    bmd.move(game.width, game.height);
-    bmd.context.fillStyle = '#ffffff';
-    for (let x of [0-game.width, 0, game.width])
-        for (let y of [0-game.height, 0, game.height])
-            game.add.sprite(x, y, bmd);
-
-    game.world.setBounds(900, 900);
-    game.camera.follow(sprite);
+    game.world.setBounds(0, 0, 2500, 2500);
+    game.camera.follow(player);
     game.camera.bounds = null;
+    // gameWorld.scale.set(.5);
 
 }
 
+const trailInterval = 5;
+var trailCounter = trailInterval;
+
 function update() {
 
-    //  400 is the speed it will move towards the mouse
-    game.physics.arcade.moveToPointer(sprite, 400);
-    sprite.rotation = game.physics.arcade.angleToPointer(sprite);
+    // Move/turn toward pointer
+    game.physics.arcade.moveToPointer(player, 400);
+    player.rotation = game.physics.arcade.angleToPointer(player);
 
-    //  if it's overlapping the mouse, don't move any more
-    if (Phaser.Rectangle.contains(sprite.body, game.input.worldX, game.input.worldY))
+    // Stop on mouseover
+    if (Phaser.Rectangle.contains(player.body, game.input.worldX, game.input.worldY))
     {
-        sprite.body.velocity.setTo(0, 0);
+        player.body.velocity.setTo(0, 0);
     }
 
-    bmd.context.fillRect(sprite.x, sprite.y, 2, 2);
-    bmd.dirty = true;
+    if (trailCounter++ > trailInterval) {
+        trailCounter = 0;
 
-    if (sprite.x > game.width) sprite.x = 0;
-    if (sprite.x < 0) sprite.x = game.width;
-    if (sprite.y > game.height) sprite.y = 0;
-    if (sprite.y < 0) sprite.y = game.height;
+        // Draw trail
+        var trail = game.add.graphics(0, 0);        
+        for (let x of [0-game.world.bounds.width, 0, game.world.bounds.width])
+            for (let y of [0-game.world.bounds.height, 0, game.world.bounds.height]) {
+                trail.beginFill(0xffffff);
+                trail.drawCircle(x + player.x, y + player.y, 3);
+                trail.endFill();
+            }
+        setTimeout(() => trail.kill(), 3000); // Keep trail 3 seconds long
+    }
+
+    // Wrap player into game world
+    if (player.x > game.world.bounds.width) player.x = 0;
+    if (player.x < 0) player.x = game.world.bounds.width;
+    if (player.y > game.world.bounds.height) player.y = 0;
+    if (player.y < 0) player.y = game.world.bounds.height;
         
-    game.debug.body(sprite);
+    game.debug.body(player);
 
 }
 
 function render() {
 
     game.debug.cameraInfo(game.camera, 32, 32);
-    game.debug.spriteCoords(sprite, 32, 500);
+    game.debug.spriteCoords(player, 32, 500);
     game.debug.inputInfo(500, 500);
 
 }
