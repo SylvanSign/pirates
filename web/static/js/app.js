@@ -21,7 +21,7 @@ import "phoenix_html"
 // import socket from "./socket"
 
 
-var game = new Phaser.Game(800, 600, Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update });
+var game = new Phaser.Game('100', '100', Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update, render: render });
 
 function preload() {
 
@@ -30,6 +30,7 @@ function preload() {
 }
 
 var sprite;
+var bmd;
 
 function create() {
 
@@ -42,6 +43,17 @@ function create() {
 
     sprite.body.debug = true;
 
+    bmd = game.add.bitmapData(game.width, game.height);
+    bmd.move(game.width, game.height);
+    bmd.context.fillStyle = '#ffffff';
+    for (let x of [0-game.width, 0, game.width])
+        for (let y of [0-game.height, 0, game.height])
+            game.add.sprite(x, y, bmd);
+
+    game.world.setBounds(900, 900);
+    game.camera.follow(sprite);
+    game.camera.bounds = null;
+
 }
 
 function update() {
@@ -51,11 +63,27 @@ function update() {
     sprite.rotation = game.physics.arcade.angleToPointer(sprite);
 
     //  if it's overlapping the mouse, don't move any more
-    if (Phaser.Rectangle.contains(sprite.body, game.input.x, game.input.y))
+    if (Phaser.Rectangle.contains(sprite.body, game.input.worldX, game.input.worldY))
     {
         sprite.body.velocity.setTo(0, 0);
     }
+
+    bmd.context.fillRect(sprite.x, sprite.y, 2, 2);
+    bmd.dirty = true;
+
+    if (sprite.x > game.width) sprite.x = 0;
+    if (sprite.x < 0) sprite.x = game.width;
+    if (sprite.y > game.height) sprite.y = 0;
+    if (sprite.y < 0) sprite.y = game.height;
         
     game.debug.body(sprite);
+
+}
+
+function render() {
+
+    game.debug.cameraInfo(game.camera, 32, 32);
+    game.debug.spriteCoords(sprite, 32, 500);
+    game.debug.inputInfo(500, 500);
 
 }
