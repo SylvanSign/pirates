@@ -2,7 +2,7 @@ defmodule Pirates.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", Pirates.RoomChannel
+  channel "game:*", Pirates.GameChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket

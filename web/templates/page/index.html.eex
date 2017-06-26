@@ -1,1 +1,6 @@
 <div id="game"></div>
+
+<div id="chat">
+    <input id="chat-input" type="text"></input>
+    <div id="messages"></div>
+</div>
