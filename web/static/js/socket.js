@@ -3,9 +3,9 @@
 
 // To use Phoenix channels, the first step is to import Socket
 // and connect at the socket path in "lib/my_app/endpoint.ex":
-import {Socket} from "phoenix"
+import { Socket } from "phoenix"
 
-let socket = new Socket("/socket", {params: {token: window.userToken}})
+let socket = new Socket("/socket", { params: { token: window.userToken } })
 
 // When you connect, you'll often need to authenticate the client.
 // For example, imagine you have an authentication plug, `MyAuth`,
@@ -53,20 +53,21 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 
 socket.connect()
 
-let channel           = socket.channel("game:lobby", { })
-let chatInput         = document.querySelector("#chat-input")
+let gameChannel = socket.channel("game:lobby", {})
+let chatInput = document.querySelector("#chat-input")
 let messagesContainer = document.querySelector("#messages")
 
-let userId = 'user ' + Math.floor(100 * Math.random());
-
 chatInput.addEventListener("keypress", event => {
-  if(event.keyCode === 13){
-    channel.push("new_chatmsg", {body: chatInput.value, user: userId})
-    chatInput.value = ""
+  if (event.keyCode === 13) {
+    const message = chatInput.value.trim();
+    if (message !== '') {
+      gameChannel.push("new_chatmsg", { body: chatInput.value })
+      chatInput.value = ""
+    }
   }
 })
 
-channel.on("new_chatmsg", payload => {
+gameChannel.on("new_chatmsg", payload => {
   let messageItem = document.createElement("li");
   let now = new Date();
   messageItem.innerText = `[${now.getHours()}:${(now.getMinutes() < 10 ? '0' : '') + now.getMinutes()}] ${payload.user}: ${payload.body}`;
@@ -74,8 +75,9 @@ channel.on("new_chatmsg", payload => {
   setTimeout(() => messagesContainer.removeChild(messageItem), 8000);
 })
 
-channel.join()
+gameChannel.join()
   .receive("ok", resp => { console.log("Joined successfully", resp) })
   .receive("error", resp => { console.log("Unable to join", resp) })
 
 export default socket
+export { gameChannel }

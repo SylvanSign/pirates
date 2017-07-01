@@ -11,11 +11,12 @@ defmodule Pirates do
       # Start the endpoint when the application starts
       supervisor(Pirates.Endpoint, []),
       worker(Pirates.GameServer, [:named]),
+      worker(Pirates.StateTicker, []),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: Pirates.Supervisor]
+    opts = [strategy: :rest_for_one, name: Pirates.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
