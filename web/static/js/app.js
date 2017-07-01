@@ -32,6 +32,7 @@ function preload() {
 var player;
 var gameState = [];
 var spriteCache = [];
+var wrapMatrix = [];
 
 function create() {
 
@@ -48,6 +49,10 @@ function create() {
     console.log(JSON.stringify(state));
     gameState = state;
   })
+  
+  for (let [ix, x] of [0 - game.world.bounds.width, 0, game.world.bounds.width].entries())
+    for (let [iy, y] of [0 - game.world.bounds.height, 0, game.world.bounds.height].entries())
+      wrapMatrix[ix*3+iy] = {x: x, y: y};
 }
 
 const trailInterval = 5;
@@ -62,11 +67,14 @@ function update() {
     player.body.velocity.setTo(0, 0);
   }
 
-  for (let char of gameState) {
-    let sprite = spriteCache[char.id] = spriteCache[char.id] || addSprite();
-    sprite.x = char.pos.x;
-    sprite.y = char.pos.y;
-    sprite.rotation = char.rot;
+  for (let char of gameState) {    
+    let spriteMatrix = spriteCache[char.id] = spriteCache[char.id] || addSpriteMatrix();
+    for (let [i, m] of wrapMatrix.entries()) {
+      let sprite = spriteMatrix[i];
+      sprite.x = char.pos.x + m.x;
+      sprite.y = char.pos.y + m.y;
+      sprite.rotation = char.rot;
+    }
   }
 
   if (trailCounter++ > trailInterval) {
@@ -74,7 +82,7 @@ function update() {
 
     for (let pos of gameState.map(c => c.pos).concat(player)) {
       // Draw trail
-      var trail = game.add.graphics(0, 0);
+      let trail = game.add.graphics(0, 0);
       for (let x of [0 - game.world.bounds.width, 0, game.world.bounds.width])
         for (let y of [0 - game.world.bounds.height, 0, game.world.bounds.height]) {
           trail.beginFill(0xffffff);
@@ -115,4 +123,11 @@ function addSprite() {
   game.physics.enable(sprite, Phaser.Physics.ARCADE);
   sprite.body.setCircle(sprite.width / 2, 0, 0);
   return sprite;
+}
+
+function addSpriteMatrix() {
+  let matrix = [];
+  for (let i = 0; i < wrapMatrix.length; i++)
+    matrix.push(addSprite());
+    return matrix;
 }
