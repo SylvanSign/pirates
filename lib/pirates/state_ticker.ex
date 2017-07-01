@@ -2,7 +2,7 @@ defmodule Pirates.StateTicker do
   use GenServer
 
   @name __MODULE__
-  @ticks_per_second 1
+  @ticks_per_second 60
   @tick_timer_in_ms div(1 * 1_000, @ticks_per_second)
 
   ##############
