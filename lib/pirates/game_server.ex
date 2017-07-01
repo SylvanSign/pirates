@@ -6,6 +6,11 @@ defmodule Pirates.GameServer do
 
   @name __MODULE__
 
+  defmodule State do
+    @enforce_keys [:id, :pos, :rot]
+    defstruct [:id, :pos, :rot]
+  end
+
   ##############
   # Client API #
   ##############
@@ -41,7 +46,7 @@ defmodule Pirates.GameServer do
   @doc """
   Updates state of the calling process in the given table
   """
-  def update_state(table, state) do
+  def update_state(table, state = %State{}) do
     calling_pid = self()
     case :ets.lookup(table, calling_pid) do
       [{^calling_pid, _}] ->
@@ -53,16 +58,16 @@ defmodule Pirates.GameServer do
   end
 
   @doc """
-  Produces a list of all known states
+  Produces a `{pids, states}` tuple from the given ets table
   """
-  def states(table) do
+  def state(table) do
     folding_fn = fn
       ({_key, value}, results) when value == %{} ->
         results
-      ({_key, value}, results) ->
-        [value | results]
+      ({pid, state = %State{}}, {pids, states}) ->
+        {[pid | pids], [state | states]}
     end
-    :ets.foldl(folding_fn, [], table)
+    :ets.foldl(folding_fn, {[], []}, table)
   end
 
   ####################
@@ -82,6 +87,7 @@ defmodule Pirates.GameServer do
   def handle_call(:register, {from_pid, _}, table) do
     if :ets.insert_new(table, {from_pid, %{}}) do
       Process.monitor(from_pid)
+      IO.puts "Just registered #{inspect(from_pid)}"
       {:reply, {:ok, table}, table}
     else
       {:reply, {:error, "#{inspect(from_pid)} is already registered on this server"}, table}
@@ -95,6 +101,7 @@ defmodule Pirates.GameServer do
   # handle notifications of dead monitored processes
   def handle_info({:DOWN, _ref, :process, pid, _reason}, table) do
     :ets.delete(table, pid)
+    IO.puts "Just deleted state for #{inspect(pid)}"
     {:noreply, table}
   end
 
