@@ -1,1 +1,17 @@
 /* This file is for your main application css. */
+body {
+    margin: 0;
+}
+
+#chat {    
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, .2);
+    padding: 20px;
+}
+
+#messages {    
+    color: white;
+    padding: 10px;
+}
