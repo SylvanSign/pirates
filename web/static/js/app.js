@@ -37,6 +37,7 @@ var wrapMatrix = [];
 function create() {
 
   game.stage.backgroundColor = "#0000FF";
+  game.stage.disableVisibilityChange = true;
 
   player = addSprite();
   player.body.debug = true;
@@ -49,10 +50,10 @@ function create() {
     console.log(JSON.stringify(state));
     gameState = state;
   })
-  
+
   for (let [ix, x] of [0 - game.world.bounds.width, 0, game.world.bounds.width].entries())
     for (let [iy, y] of [0 - game.world.bounds.height, 0, game.world.bounds.height].entries())
-      wrapMatrix[ix*3+iy] = {x: x, y: y};
+      wrapMatrix[ix * 3 + iy] = { x: x, y: y };
 }
 
 const trailInterval = 5;
@@ -67,7 +68,7 @@ function update() {
     player.body.velocity.setTo(0, 0);
   }
 
-  for (let char of gameState) {    
+  for (let char of gameState) {
     let spriteMatrix = spriteCache[char.id] = spriteCache[char.id] || addSpriteMatrix();
     for (let [i, m] of wrapMatrix.entries()) {
       let sprite = spriteMatrix[i];
@@ -113,13 +114,13 @@ function render() {
 }
 
 function pushStateToServer() {
-  const { body: { position, rotation } } = player;
-  gameChannel.push("player_state", { pos: position, rot: Phaser.Math.degToRad(rotation) })
+  const { offsetX, offsetY, body: { angle, position: { x, y } } } = player;
+  gameChannel.push("player_state", { pos: { x: x + offsetX, y: y + offsetY }, rot: angle })
 }
 
 function addSprite() {
   let sprite = game.add.sprite(game.world.centerX, game.world.centerY, 'pirate');
-  sprite.anchor.setTo(.5, .5);
+  sprite.anchor.set(0.5);
   game.physics.enable(sprite, Phaser.Physics.ARCADE);
   sprite.body.setCircle(sprite.width / 2, 0, 0);
   return sprite;
@@ -129,5 +130,5 @@ function addSpriteMatrix() {
   let matrix = [];
   for (let i = 0; i < wrapMatrix.length; i++)
     matrix.push(addSprite());
-    return matrix;
+  return matrix;
 }
