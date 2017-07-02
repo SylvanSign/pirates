@@ -26,10 +26,13 @@ var game = new Phaser.Game('100', '100', Phaser.AUTO, 'phaser-example', { preloa
 function preload() {
 
   game.load.image('pirate', 'images/pirate.png');
+  game.load.image('mute', 'images/mute.png');
+  game.load.audio('chantey', 'sounds/pirates.wav');
 
 }
 
 var player;
+let chantey;
 var gameState = [];
 var spriteCache = [];
 var wrapMatrix = [];
@@ -37,10 +40,20 @@ var wrapMatrix = [];
 function create() {
 
   game.stage.backgroundColor = "#0000FF";
+  // TODO get better mute button asset, size it correctly, add frames
+  const muteButton = game.add.button(10, 10, 'mute', toggleMute)
+  muteButton.height = 50;
+  muteButton.width = 50;
+  muteButton.fixedToCamera = true
+
+  // TODO: the following line is for development purposes only;
+  // remove this before releasing game
   game.stage.disableVisibilityChange = true;
 
   player = addSprite();
   player.body.debug = true;
+  chantey = game.add.audio('chantey');
+  chantey.loopFull(0.3);
 
   game.world.setBounds(0, 0, 2500, 2500);
   game.camera.follow(player);
@@ -107,10 +120,6 @@ function update() {
 
 function render() {
 
-  game.debug.cameraInfo(game.camera, 32, 32);
-  game.debug.spriteCoords(player, 32, 500);
-  game.debug.inputInfo(500, 500);
-
 }
 
 function pushStateToServer() {
@@ -131,4 +140,8 @@ function addSpriteMatrix() {
   for (let i = 0; i < wrapMatrix.length; i++)
     matrix.push(addSprite());
   return matrix;
+}
+
+function toggleMute(/* button, pointer, isOver */) {
+  chantey.mute = !chantey.mute
 }
