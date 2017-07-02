@@ -54,13 +54,13 @@ function create() {
   player.body.debug = true;
   chantey = game.add.audio('chantey');
   chantey.loopFull(0.3);
+  // chantey.mute = true; // remember initial mute state
 
   game.world.setBounds(0, 0, 2500, 2500);
   game.camera.follow(player);
   game.camera.bounds = null;
 
   gameChannel.on("state_tick", ({ state }) => {
-    console.log(JSON.stringify(state));
     gameState = state;
   })
 
@@ -81,6 +81,18 @@ function update() {
     player.body.velocity.setTo(0, 0);
   }
 
+  // Drop disconnected sprites
+  for (let charId in spriteCache) {
+    if (gameState.every(c => c.id != charId)) {
+      for (let sprite of spriteCache[charId]) {
+        sprite.body = null;
+        sprite.destroy();
+      }
+      spriteCache.splice(charId, 1);
+    }
+  }
+
+  // Update and cache connected sprites
   for (let char of gameState) {
     let spriteMatrix = spriteCache[char.id] = spriteCache[char.id] || addSpriteMatrix();
     for (let [i, m] of wrapMatrix.entries()) {
@@ -103,7 +115,7 @@ function update() {
           trail.drawCircle(x + pos.x, y + pos.y, 3);
           trail.endFill();
         }
-      setTimeout(() => trail.kill(), 3000); // Keep trail 3 seconds long
+      setTimeout(() => trail.destroy(), 3000); // Keep trail 3 seconds long
     }
 
     // Wrap player into game world
