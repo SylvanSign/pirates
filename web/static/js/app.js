@@ -117,13 +117,19 @@ function update() {
         }
       setTimeout(() => trail.destroy(), 3000); // Keep trail 3 seconds long
     }
-
-    // Wrap player into game world
-    if (player.x > game.world.bounds.width) player.x = 0;
-    if (player.x < 0) player.x = game.world.bounds.width;
-    if (player.y > game.world.bounds.height) player.y = 0;
-    if (player.y < 0) player.y = game.world.bounds.height;
   }
+
+  // Wrap player into game world
+  const boundsWidth = game.world.bounds.width;
+  const boundsHeight = game.world.bounds.height;
+  if (player.x > boundsWidth)
+    player.x = player.x - boundsWidth;
+  if (player.x < 0)
+    player.x = boundsWidth + player.x;
+  if (player.y > boundsHeight)
+    player.y = player.y - boundsHeight;
+  if (player.y < 0)
+    player.y = boundsHeight + player.y;
 
   game.debug.body(player);
 
