@@ -135,8 +135,8 @@ function render() {
 }
 
 function pushStateToServer() {
-  const { offsetX, offsetY, body: { angle, position: { x, y } } } = player;
-  gameChannel.push("player_state", { pos: { x: x + offsetX, y: y + offsetY }, rot: angle })
+  const { offsetX, offsetY, body: { rotation, position: { x, y } } } = player;
+  gameChannel.push("player_state", { pos: { x: x + offsetX, y: y + offsetY }, rot: Phaser.Math.degToRad(rotation) })
 }
 
 function addSprite() {
