@@ -54,7 +54,7 @@ function create() {
   player.body.debug = true;
   chantey = game.add.audio('chantey');
   chantey.loopFull(0.3);
-  // chantey.mute = true; // remember initial mute state
+  chantey.mute = true; // remember initial mute state
 
   game.world.setBounds(0, 0, 2500, 2500);
   game.camera.follow(player);
