@@ -8,23 +8,28 @@ const WORLD_SCALE = 2
 const WORLD_WIDTH = WIDTH * WORLD_SCALE
 const WORLD_HEIGHT = HEIGHT * WORLD_SCALE
 
-const PLAYER_ANGULAR_VELOCITY = Phaser.Math.degToRad(3);
-const PLAYER_MOVEMENT_VELOCITY = 200;
+const PLAYER_ANGULAR_VELOCITY = Phaser.Math.degToRad(2);
+const PLAYER_MOVEMENT_VELOCITY = 400;
 
 
-const game = new Phaser.Game(WIDTH, HEIGHT, Phaser.AUTO, null, { preload: preload, create: create, update: update, render: render })
+const game = new Phaser.Game(WIDTH, HEIGHT, Phaser.CANVAS, null, { preload: preload, create: create, update: update, render: render })
 
 function preload() {
   game.load.image('pirate', 'images/pirate.png')
+  game.load.image('cannonball', 'images/cannonball.png');
   game.load.image('mute', 'images/mute.png')
   game.load.image('fullscreen', 'images/fullscreen.png')
   game.load.audio('chantey', 'sounds/pirates.wav')
 }
 
-let player
-let chantey
-let gameState = []
-let spriteCache = {}
+let player;
+let chantey;
+let leftCannons;
+let rightCannons;
+let gameState = [];
+const spriteCache = {};
+const wrapMatrix = [];
+const sprites = [];
 
 function create() {
   setupScaling()
@@ -36,13 +41,19 @@ function create() {
   // remove this before releasing game
   game.stage.disableVisibilityChange = true
 
-  player = addSprite({ randomizePosition: true })
+  player = addShip()
+  game.input.onDown.add(shoot);
 
   game.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
   game.camera.follow(player)
 
+  leftCannons = addWeapons('left');
+  rightCannons = addWeapons('right');
+
   gameChannel.on("state_tick", ({ state }) => {
     gameState = state
+    // Update and cache connected sprites
+    cleanDisconnectedPlayers()
   })
 }
 
@@ -52,8 +63,6 @@ var trailCounter = trailInterval
 function update() {
   /// Input
   handleInput()
-  // Update and cache connected sprites
-  cleanDisconnectedPlayers()
   // TODO bundle trails in with player and enemy updating, use weapons module
   updateEnemies()
   // Drop disconnected sprites
@@ -67,21 +76,53 @@ function render() {
 }
 
 function pushStateToServer() {
-  const { offsetX, offsetY, body: { rotation, position: { x, y } } } = player
-  gameChannel.push("player_state", { pos: { x: x + offsetX, y: y + offsetY }, rot: Phaser.Math.degToRad(rotation) })
+  const playerState = extractStateData(player);
+  const cannonballs = getCannonBalls();
+  const cannonballState = cannonballs.map(extractStateData);
+
+  Object.assign(playerState, { cannonballs: cannonballState });
+
+  gameChannel.push("player_state", playerState)
 }
 
-function addSprite({ randomizePosition = false } = {}) {
-  let x = game.world.centerX
-  let y = game.world.centerY
-  if (randomizePosition) {
-    x = Math.random() * WORLD_WIDTH
-    y = Math.random() * WORLD_HEIGHT
-  }
+function extractStateData(sprite) {
+  const { offsetX, offsetY, body: { rotation, position: { x, y } }, visible } = sprite;
+  return {
+    pos: {
+      x: x + offsetX,
+      y: y + offsetY
+    },
+    rot: Phaser.Math.degToRad(rotation),
+    visible,
+  };
+}
+
+function getCannonBalls() {
+  const cannonballs = [];
+  leftCannons.forEach(c => c.bullets.forEach(b => cannonballs.push(b)));
+  rightCannons.forEach(c => c.bullets.forEach(b => cannonballs.push(b)));
+  return cannonballs;
+}
+
+function addShip() {
+  let x = Math.random() * WORLD_WIDTH
+  let y = Math.random() * WORLD_HEIGHT
   let sprite = game.add.sprite(x, y, 'pirate')
   sprite.anchor.set(0.5)
   game.physics.enable(sprite, Phaser.Physics.ARCADE)
   sprite.body.setCircle(sprite.width / 2, 0, 0)
+  return sprite
+}
+
+function addCannonball() {
+  let x = game.world.centerX
+  let y = game.world.centerY
+
+  let sprite = game.add.sprite(x, y, 'cannonball')
+  sprite.anchor.set(0.5)
+  sprite.scale.setTo(0.2, 0.2);
+  game.physics.enable(sprite, Phaser.Physics.ARCADE)
+  sprite.body.setCircle(sprite.width / 10, 0, 0)
   return sprite
 }
 
@@ -148,7 +189,8 @@ function handleInput() {
 }
 
 function cleanDisconnectedPlayers() {
-  const enemyIds = gameState.map(({ id }) => id)
+  const enemyIds = gameState.map(({ id }) => id);
+
   Object.keys(spriteCache).forEach(id => {
     if (!enemyIds.includes(id)) {
       spriteCache[id].destroy()
@@ -159,11 +201,25 @@ function cleanDisconnectedPlayers() {
 
 function updateEnemies() {
   for (let enemy of gameState) {
-    const { id, rot, pos: { x, y } } = enemy
-    spriteCache[id] = spriteCache[id] || addSprite()
+    const { id, rot, pos: { x, y }, cannonballs } = enemy
+    let newEnemy = false;
+    if (!spriteCache[id]) {
+      spriteCache[id] = addShip()
+      newEnemy = true;
+    }
     spriteCache[id].x = x
     spriteCache[id].y = y
     spriteCache[id].rotation = rot
+    if (newEnemy) {
+      spriteCache[id].cannonballs = cannonballs.map(c => addCannonball());
+    }
+    spriteCache[id].cannonballs.forEach((sprite, ind) => {
+      const { visible, rot, pos: { x, y } } = cannonballs[ind];
+      sprite.visible = visible;
+      sprite.x = x;
+      sprite.y = y;
+      sprite.rotation = rot;
+    })
   }
 }
 
@@ -182,11 +238,47 @@ function updateTrails() {
   }
 }
 
-// TODO For debugging only, pls remove later
-function p(x) {
-  console.log(x)
+function shoot() {
+  leftCannons.forEach(c => c.fireAngle = player.angle + 270);
+  leftCannons.forEach(c => c.fire());
+
+  rightCannons.forEach(c => c.fireAngle = player.angle + 90);
+  rightCannons.forEach(c => c.fire());
 }
 
+function addWeapons(side, num = 3) {
+  function makeWeapon() {
+    const weapon = game.add.weapon(1, 'cannonball');
+
+    weapon.bullets.forEach((b) => {
+      b.scale.setTo(0.2, 0.2);
+    }, this);
+
+    weapon.bulletKillType = Phaser.Weapon.KILL_LIFESPAN;
+    weapon.bulletLifespan = 800;
+    weapon.bulletAngleVariance = 10;
+    weapon.bulletSpeedVariance = 100;
+
+    weapon.fireRate = 500; // 1 shot per x ms
+    weapon.bulletSpeed = 600;
+
+    weapon.trackSprite(player, 0, 0);
+
+    weapon.onFire.add(addShipVelocity);
+    return weapon;
+  }
+
+  let weapons = []
+  for (let i = 0; i != num; ++i) {
+    weapons[i] = makeWeapon()
+  }
+  return weapons;
+}
+
+function addShipVelocity(bullet, weapon) {
+  bullet.body.velocity.x += player.body.velocity.x;
+  bullet.body.velocity.y += player.body.velocity.y;
+}
 
 // // TODO: make the chat part of the Phaser Game
 // function setupChat() {
