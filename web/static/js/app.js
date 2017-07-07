@@ -18,24 +18,33 @@ import "phoenix_html"
 // Local files can be imported directly using relative
 // paths "./socket" or full ones "web/static/js/socket".
 
-import { gameChannel } from "./socket"
+import {
+  gameChannel
+} from "./socket"
 
-
-var game = new Phaser.Game('100', '100', Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update, render: render });
+var game = new Phaser.Game('100', '100', Phaser.AUTO, 'phaser-example', {
+  preload: preload,
+  create: create,
+  update: update,
+  render: render
+});
 
 function preload() {
 
   game.load.image('pirate', 'images/pirate.png');
+  game.load.image('cannonball', 'images/cannonball.png');
   game.load.image('mute', 'images/mute.png');
   game.load.audio('chantey', 'sounds/pirates.wav');
-
 }
 
 var player;
 let chantey;
+var leftCannon;
+var rightCannon;
 var gameState = [];
 var spriteCache = [];
 var wrapMatrix = [];
+var sprites = [];
 
 function create() {
 
@@ -60,13 +69,23 @@ function create() {
   game.camera.follow(player);
   game.camera.bounds = null;
 
-  gameChannel.on("state_tick", ({ state }) => {
+  leftCannon = addWeapon();
+  rightCannon = addWeapon();
+
+  gameChannel.on("state_tick", ({
+    state
+  }) => {
     gameState = state;
   })
 
+  game.input.onDown.add(shoot, this);
+
   for (let [ix, x] of [0 - game.world.bounds.width, 0, game.world.bounds.width].entries())
     for (let [iy, y] of [0 - game.world.bounds.height, 0, game.world.bounds.height].entries())
-      wrapMatrix[ix * 3 + iy] = { x: x, y: y };
+      wrapMatrix[ix * 3 + iy] = {
+        x: x,
+        y: y
+      };
 }
 
 const trailInterval = 5;
@@ -75,7 +94,7 @@ var trailCounter = trailInterval;
 function update() {
 
   /// Input
-  game.physics.arcade.moveToPointer(player, 400);
+  game.physics.arcade.moveToPointer(player, 100);
   player.rotation = game.physics.arcade.angleToPointer(player);
   if (Phaser.Rectangle.contains(player.body, game.input.worldX, game.input.worldY)) {
     player.body.velocity.setTo(0, 0);
@@ -141,8 +160,34 @@ function render() {
 }
 
 function pushStateToServer() {
-  const { offsetX, offsetY, body: { rotation, position: { x, y } } } = player;
-  gameChannel.push("player_state", { pos: { x: x + offsetX, y: y + offsetY }, rot: Phaser.Math.degToRad(rotation) })
+  const {
+    offsetX,
+    offsetY,
+    body: {
+      rotation,
+      position: {
+        x,
+        y
+      }
+    }
+  } = player;
+  gameChannel.push("player_state", {
+    pos: {
+      x: x + offsetX,
+      y: y + offsetY
+    },
+    rot: Phaser.Math.degToRad(rotation)
+  })
+
+  for (let sprite in sprites) {
+    gameChannel.push("sprite_state", {
+      pos: {
+        x: sprite.x + sprite.offsetX,
+        y: sprite.y + sprite.offsetY
+      },
+      rot: Phaser.Math.degToRad(sprite.rotation)
+    })
+  }
 }
 
 function addSprite() {
@@ -160,6 +205,45 @@ function addSpriteMatrix() {
   return matrix;
 }
 
-function toggleMute(/* button, pointer, isOver */) {
+function toggleMute( /* button, pointer, isOver */ ) {
   chantey.mute = !chantey.mute
+}
+
+function shoot() {
+  leftCannon.fireAngle = player.angle + 270;
+  leftCannon.fire();
+
+  rightCannon.fireAngle = player.angle + 90;
+  rightCannon.fire();
+}
+
+function destroy() {
+  this.destroy();
+}
+
+function addWeapon() {
+
+  var weapon = game.add.weapon(5, 'cannonball');
+
+  weapon.bullets.forEach((b) => {
+    b.scale.setTo(.25, .25);
+  }, this);
+
+  weapon.bulletKillType = Phaser.Weapon.KILL_LIFESPAN;
+  weapon.bulletLifespan = 1000;
+
+  weapon.fireRate = 1;
+
+  weapon.bulletSpeed = 200;
+
+  weapon.trackSprite(player, 0, 0);
+
+  weapon.onFire.add(addShipVelocity);
+
+  return weapon;
+}
+
+function addShipVelocity(bullet, weapon) {
+  bullet.body.velocity.x += player.body.velocity.x;
+  bullet.body.velocity.y += player.body.velocity.y;
 }
