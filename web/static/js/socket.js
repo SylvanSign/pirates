@@ -54,26 +54,6 @@ let socket = new Socket("/socket", { params: { token: window.userToken } })
 socket.connect()
 
 let gameChannel = socket.channel("game:lobby", {})
-let chatInput = document.querySelector("#chat-input")
-let messagesContainer = document.querySelector("#messages")
-
-chatInput.addEventListener("keypress", event => {
-  if (event.keyCode === 13) {
-    const message = chatInput.value.trim();
-    if (message !== '') {
-      gameChannel.push("new_chatmsg", { body: chatInput.value })
-      chatInput.value = ""
-    }
-  }
-})
-
-gameChannel.on("new_chatmsg", payload => {
-  let messageItem = document.createElement("li");
-  let now = new Date();
-  messageItem.innerText = `[${now.getHours()}:${(now.getMinutes() < 10 ? '0' : '') + now.getMinutes()}] ${payload.user}: ${payload.body}`;
-  messagesContainer.insertBefore(messageItem, messagesContainer.firstChild);
-  setTimeout(() => messagesContainer.removeChild(messageItem), 8000);
-})
 
 gameChannel.join()
   .receive("ok", resp => { console.log("Joined successfully", resp) })
