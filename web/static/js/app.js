@@ -212,6 +212,7 @@ function toggleFullScreen() {
 // TODO: make the chat part of the Phaser Game
 function setupChat() {
   let chatInput = document.querySelector("#chat-input")
+  chatInput.focus();
   let messagesContainer = document.querySelector("#messages")
 
   chatInput.addEventListener("keypress", event => {
