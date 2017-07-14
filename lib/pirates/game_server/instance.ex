@@ -1,4 +1,4 @@
-defmodule Pirates.GameServer do
+defmodule Pirates.GameServer.Instance do
   use GenServer
   @moduledoc """
   Functions to handle Pirates game servers.

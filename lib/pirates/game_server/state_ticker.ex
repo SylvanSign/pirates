@@ -1,4 +1,4 @@
-defmodule Pirates.StateTicker do
+defmodule Pirates.GameServer.StateTicker do
   use GenServer
 
   @name __MODULE__
@@ -19,11 +19,11 @@ defmodule Pirates.StateTicker do
 
   def init(:ok) do
     {:ok, _} = :timer.send_interval(@tick_timer_in_ms, :tick)
-    {:ok, Pirates.GameServer.table}
+    {:ok, Pirates.GameServer.Instance.table}
   end
 
   def handle_info(:tick, table) do
-    {pids, states} = Pirates.GameServer.state(table)
+    {pids, states} = Pirates.GameServer.Instance.state(table)
     pids |> Enum.each(fn pid -> send(pid, {:state_tick, states}) end)
     {:noreply, table}
   end

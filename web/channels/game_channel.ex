@@ -1,9 +1,9 @@
 defmodule Pirates.GameChannel do
   use Phoenix.Channel
-  alias Pirates.GameServer.State
+  alias Pirates.GameServer.Instance.State
 
   def join("game:lobby", _message, socket) do
-    {:ok, table} = Pirates.GameServer.register()
+    {:ok, table} = Pirates.GameServer.Instance.register()
     socket = assign(socket, :table, table)
     socket = assign(socket, :id, System.unique_integer([:positive]))
     {:ok, socket}
@@ -20,7 +20,7 @@ defmodule Pirates.GameChannel do
   def handle_in("player_state", state, socket) do
     full_state = parse_state_struct(state)
     full_state = %{full_state | id: socket.assigns.id}
-    Pirates.GameServer.update_state(socket.assigns.table, full_state)
+    Pirates.GameServer.Instance.update_state(socket.assigns.table, full_state)
     {:noreply, socket}
   end
 
