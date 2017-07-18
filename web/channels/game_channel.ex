@@ -5,7 +5,6 @@ defmodule Pirates.GameChannel do
 
   def join("game:lobby", _message, socket) do
     {:ok, server} = Pirates.GameServer.Manager.get_available_server()
-    Logger.debug(inspect(server))
     {:ok, table} = Pirates.GameServer.Instance.register(server)
     
     {:ok, socket |>

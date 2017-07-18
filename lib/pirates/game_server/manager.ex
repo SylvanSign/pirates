@@ -7,6 +7,7 @@ defmodule Pirates.GameServer.Manager do
     alias Pirates.GameServer.Instance
 
     @name __MODULE__
+    @max_players_per_server 2
 
   ##############
   # Client API #
@@ -32,7 +33,7 @@ defmodule Pirates.GameServer.Manager do
   def handle_call(:next, _from, servers) do
     #   todo: get next available server
     server = servers |>
-        Enum.filter(fn (s) -> count(s) < 8 end) |>
+        Enum.filter(fn (s) -> count(s) < @max_players_per_server end) |>
         Enum.min_by(&count/1, fn -> create_server() end)
     {:reply, {:ok, server}, [server | servers]}
   end
