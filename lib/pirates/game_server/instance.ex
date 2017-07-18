@@ -121,6 +121,9 @@ defmodule Pirates.GameServer.Instance do
   def handle_info({:DOWN, _ref, :process, pid, _reason}, table) do
     :ets.delete(table, pid)
     IO.puts "Just deleted state for #{inspect(pid)}"
+    if count(table) == 0 do
+      Process.exit(self(), "Server was empty.")
+    end
     {:noreply, table}
   end
 

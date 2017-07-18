@@ -31,11 +31,16 @@ defmodule Pirates.GameServer.Manager do
   end
 
   def handle_call(:next, _from, servers) do
-    #   todo: get next available server
     server = servers |>
         Enum.filter(fn (s) -> count(s) < @max_players_per_server end) |>
         Enum.min_by(&count/1, fn -> create_server() end)
     {:reply, {:ok, server}, [server | servers]}
+  end
+
+  # handle dropped servers
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, servers) do
+      servers = List.delete(servers, pid)
+    {:noreply, servers}
   end
 
   defp count(s) do
@@ -44,6 +49,7 @@ defmodule Pirates.GameServer.Manager do
 
   defp create_server do
     {:ok, server} = Supervisor.start_child(Pirates.GameServer.Factory, [])
+    Process.monitor server
     server
   end
 
