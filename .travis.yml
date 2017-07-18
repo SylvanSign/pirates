@@ -23,7 +23,7 @@ script:
 
 deploy:
   - provider: heroku
-    app: pirates-testbuild
+    app: pirates-deploy
     buildpack: https://github.com/HashNuke/heroku-buildpack-elixir.git
     api-key: 
       - secure: "h+1MScrbbUxWLsJasjBwlqnve4HBzy1KPdAyRbrjmvT2NcTs//5iCFt0K7u9JS2ChHCuJSJxesEVpyTOv/aQH71U3ZD5leC6Rk9XmQFHm/r4FyoydQUCxXo9V3lIeyYacqRG2pP4JVvChWZfnWUr+yraEhqWGQAzro/38W+IzzvmmYCtxieMBedlVvW9DIX40mtDY1r5JJo2JKAwpzmtHbF094zeGSXYgn6tiO2QF+T9B1bJ5QtQHRvLQQceujMRLHVITrWxYvZsDALyYmAcIBIVYa3rmr/Njr/xHIXY9fGrl/aaR7poHqtzofA6J1ihdGjH7E5xSYPQMZhVEtmzCk4lvXP2t1RY4yGB8x9e8atBEJ+IXgq75g3E/l/PauxcUKDJOE8EhhGnFF94x9k45zsu98e6qoECYNbhr5WTiQv81bP1E3NF4wGuOXtQSMq1zKlIyoE3iTr5xZHSeCvVlzBKwVnRr3gOnWmIjXt6U0RLqdM2CKyMGHmyH71skTjeHxxvGgMpby2NaMLEFgCterF7daEucI+dnAaGTW4gYkdstGsszmUiKHK/Kb98nA/91PhFilhNi9JlF6drjpuBOaYcmVsq5pGoO8YwklSOA3HItA8IBQAQw73LXxSq1r+GN70+XlUfHWzKvyM6kSpgmygS7PhygzCW2ZN4AHgdfyo="
