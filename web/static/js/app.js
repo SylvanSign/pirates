@@ -22,7 +22,8 @@ import {
   gameChannel
 } from "./socket"
 
-var game = new Phaser.Game('100', '100', Phaser.AUTO, 'phaser-example', {
+
+var game = new Phaser.Game(1920, 1080, Phaser.AUTO, null, {
   preload: preload,
   create: create,
   update: update,
@@ -34,36 +35,30 @@ function preload() {
   game.load.image('pirate', 'images/pirate.png');
   game.load.image('cannonball', 'images/cannonball.png');
   game.load.image('mute', 'images/mute.png');
+  game.load.image('fullscreen', 'images/fullscreen.png');
   game.load.audio('chantey', 'sounds/pirates.wav');
 }
 
-var player;
+let player;
 let chantey;
-var leftCannon;
-var rightCannon;
-var gameState = [];
-var spriteCache = [];
-var wrapMatrix = [];
-var sprites = [];
+let leftCannon;
+let rightCannon;
+let gameState = [];
+let spriteCache = [];
+let wrapMatrix = [];
+let sprites = [];
 
 function create() {
+  setupScaling();
 
   game.stage.backgroundColor = "#0000FF";
-  // TODO get better mute button asset, size it correctly, add frames
-  const muteButton = game.add.button(10, 10, 'mute', toggleMute)
-  muteButton.height = 50;
-  muteButton.width = 50;
-  muteButton.fixedToCamera = true
+  createMuteButton();
 
   // TODO: the following line is for development purposes only;
   // remove this before releasing game
-  game.stage.disableVisibilityChange = true;
+  // game.stage.disableVisibilityChange = true;
 
   player = addSprite();
-  player.body.debug = true;
-  chantey = game.add.audio('chantey');
-  chantey.loopFull(0.3);
-  chantey.mute = true; // remember initial mute state
 
   game.world.setBounds(0, 0, 2500, 2500);
   game.camera.follow(player);
@@ -89,7 +84,7 @@ function create() {
 }
 
 const trailInterval = 5;
-var trailCounter = trailInterval;
+let trailCounter = trailInterval;
 
 function update() {
 
@@ -149,8 +144,6 @@ function update() {
     player.y = player.y - boundsHeight;
   if (player.y < 0)
     player.y = boundsHeight + player.y;
-
-  game.debug.body(player);
 
   pushStateToServer();
 }
@@ -222,8 +215,7 @@ function destroy() {
 }
 
 function addWeapon() {
-
-  var weapon = game.add.weapon(5, 'cannonball');
+  let weapon = game.add.weapon(5, 'cannonball');
 
   weapon.bullets.forEach((b) => {
     b.scale.setTo(.25, .25);
@@ -246,4 +238,88 @@ function addWeapon() {
 function addShipVelocity(bullet, weapon) {
   bullet.body.velocity.x += player.body.velocity.x;
   bullet.body.velocity.y += player.body.velocity.y;
+}
+
+function createMuteButton() {
+  // TODO get better mute button asset, size it correctly, add frames
+  const muteButton = game.add.button(10, 10, 'mute', () => chantey.mute = !chantey.mute);
+  muteButton.height = 100;
+  muteButton.width = 100;
+  muteButton.fixedToCamera = true
+  chantey = game.add.audio('chantey');
+  chantey.loopFull(0.3);
+  chantey.mute = true; // remember initial mute state
+}
+
+function setupScaling() {
+  // configure device-specific settings
+  if (game.device.desktop) { // desktop
+    setupChat();
+  } else { // mobile
+
+    // TEMP no need to hide chat on mobile once it's fixed
+    const chat = document.querySelector("#chat");
+    chat.hidden = true;
+    // END TEMP
+  }
+
+  // configure fullscreen
+  if (game.scale.compatibility.supportsFullScreen) {
+    game.scale.fullScreenScaleMode = Phaser.ScaleManager.SHOW_ALL;
+    createFullScreenButton();
+  }
+
+  Object.assign(game.scale, {
+    scaleMode: Phaser.ScaleManager.SHOW_ALL,
+    pageAlignHorizontally: true,
+    pageAlignVertically: true,
+  })
+}
+
+function lockOrientationWhenSupported() {
+  screen.orientation.lock('landscape').catch(err => { /* not supported, so do nothing */ });
+}
+
+function createFullScreenButton() {
+  // TODO get better mute button asset, size it correctly, add frames
+  const fullscreenButton = game.add.button(10, game.world.bounds.height, 'fullscreen', toggleFullScreen);
+  fullscreenButton.anchor.y = 1;
+  fullscreenButton.height = 100;
+  fullscreenButton.width = 100;
+  fullscreenButton.fixedToCamera = true
+}
+
+function toggleFullScreen() {
+  if (game.scale.isFullScreen) {
+    game.scale.stopFullScreen();
+  } else {
+    game.scale.startFullScreen(false);
+  }
+}
+
+// TODO: make the chat part of the Phaser Game
+function setupChat() {
+  let chatInput = document.querySelector("#chat-input")
+  chatInput.focus();
+  let messagesContainer = document.querySelector("#messages")
+
+  chatInput.addEventListener("keypress", event => {
+    if (event.keyCode === 13) {
+      const message = chatInput.value.trim();
+      if (message !== '') {
+        gameChannel.push("new_chatmsg", {
+          body: chatInput.value
+        })
+        chatInput.value = ""
+      }
+    }
+  })
+
+  gameChannel.on("new_chatmsg", payload => {
+    let messageItem = document.createElement("li");
+    let now = new Date();
+    messageItem.innerText = `[${now.getHours()}:${(now.getMinutes() < 10 ? '0' : '') + now.getMinutes()}] ${payload.user}: ${payload.body}`;
+    messagesContainer.insertBefore(messageItem, messagesContainer.firstChild);
+    setTimeout(() => messagesContainer.removeChild(messageItem), 8000);
+  })
 }
