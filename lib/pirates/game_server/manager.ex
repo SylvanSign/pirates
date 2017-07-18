@@ -1,4 +1,8 @@
 defmodule Pirates.GameServer.Manager do
+    @moduledoc """
+    Routes to game server instances and cleans up after them
+    """
+
     use GenServer
     alias Pirates.GameServer.Instance
 
@@ -38,8 +42,7 @@ defmodule Pirates.GameServer.Manager do
   end
 
   defp create_server do
-      import Supervisor.Spec
-    {:ok, server} = Supervisor.start_child(Pirates.GameServer.Supervisor, [])
+    {:ok, server} = Supervisor.start_child(Pirates.GameServer.Factory, [])
     server
   end
 

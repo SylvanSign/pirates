@@ -1,5 +1,4 @@
 defmodule Pirates.GameServer.Instance do
-    require Logger
   use GenServer
   @moduledoc """
   Functions to handle Pirates game servers.

@@ -11,7 +11,7 @@ defmodule Pirates do
       # Start the endpoint when the application starts
       supervisor(Pirates.Endpoint, []),
       worker(Pirates.GameServer.Manager, []),
-      supervisor(Pirates.GameServer.Supervisor, [])
+      supervisor(Pirates.GameServer.Factory, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
