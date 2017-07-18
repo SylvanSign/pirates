@@ -1,10 +1,13 @@
 defmodule Pirates.GameServer.Instance do
+    require Logger
   use GenServer
   @moduledoc """
   Functions to handle Pirates game servers.
   """
 
   @name __MODULE__
+  @ticks_per_second 60
+  @tick_timer_in_ms div(1 * 1_000, @ticks_per_second)
 
   defmodule State do
     @enforce_keys [:id, :pos, :rot]
@@ -70,6 +73,13 @@ defmodule Pirates.GameServer.Instance do
     :ets.foldl(folding_fn, {[], []}, table)
   end
 
+  @doc """
+  Gets number of connections to instance
+  """
+  def count(table) do
+    :ets.info(table, :size)
+  end
+
   ####################
   # Server Callbacks #
   ####################
@@ -81,6 +91,10 @@ defmodule Pirates.GameServer.Instance do
       write_concurrency: true
     ]
     table = :ets.new(:states, opts)
+
+    # init timer
+    :timer.send_interval(@tick_timer_in_ms, :tick)
+
     {:ok, table}
   end
 
@@ -96,6 +110,12 @@ defmodule Pirates.GameServer.Instance do
 
   def handle_call(:table, _from, table) do
     {:reply, table, table}
+  end
+
+  def handle_info(:tick, table) do
+    {pids, states} = Pirates.GameServer.Instance.state(table)
+    pids |> Enum.each(fn pid -> send(pid, {:state_tick, states}) end)
+    {:noreply, table}
   end
 
   # handle notifications of dead monitored processes

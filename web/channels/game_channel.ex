@@ -1,12 +1,16 @@
 defmodule Pirates.GameChannel do
   use Phoenix.Channel
   alias Pirates.GameServer.Instance.State
+  require Logger
 
   def join("game:lobby", _message, socket) do
-    {:ok, table} = Pirates.GameServer.Instance.register()
-    socket = assign(socket, :table, table)
-    socket = assign(socket, :id, System.unique_integer([:positive]))
-    {:ok, socket}
+    {:ok, server} = Pirates.GameServer.Manager.get_available_server()
+    Logger.debug(inspect(server))
+    {:ok, table} = Pirates.GameServer.Instance.register(server)
+    
+    {:ok, socket |>
+      assign(:table, table) |> 
+      assign(:id, System.unique_integer([:positive]))}
   end
   def join("game:" <> _private_room_id, _params, _socket) do
     {:error, %{reason: "unauthorized"}}

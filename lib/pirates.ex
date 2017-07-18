@@ -10,7 +10,8 @@ defmodule Pirates do
     children = [
       # Start the endpoint when the application starts
       supervisor(Pirates.Endpoint, []),
-      supervisor(Pirates.GameServer.Supervisor, []),
+      worker(Pirates.GameServer.Manager, []),
+      supervisor(Pirates.GameServer.Supervisor, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
