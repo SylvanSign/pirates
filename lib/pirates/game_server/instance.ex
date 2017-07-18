@@ -25,23 +25,16 @@ defmodule Pirates.GameServer.Instance do
   end
 
   @doc """
-  Starts up a new game server and registers it under `@name`
-  """
-  def start_link(:named) do
-    GenServer.start_link(@name, :ok, name: @name)
-  end
-
-  @doc """
   Registers the calling process on the given game server
   """
-  def register(pid \\ @name) do
+  def register(pid) do
     GenServer.call(pid, :register)
   end
 
   @doc """
   Returns the table id of the given game server
   """
-  def table(pid \\ @name) do
+  def table(pid) do
     GenServer.call(pid, :table)
   end
 
