@@ -43,6 +43,7 @@ let player;
 let chantey;
 let leftCannon;
 let rightCannon;
+let cannonballs = [];
 let gameState = [];
 let spriteCache = [];
 let wrapMatrix = [];
@@ -171,16 +172,6 @@ function pushStateToServer() {
     },
     rot: Phaser.Math.degToRad(rotation)
   })
-
-  for (let sprite in sprites) {
-    gameChannel.push("sprite_state", {
-      pos: {
-        x: sprite.x + sprite.offsetX,
-        y: sprite.y + sprite.offsetY
-      },
-      rot: Phaser.Math.degToRad(sprite.rotation)
-    })
-  }
 }
 
 function addSprite() {
@@ -231,6 +222,7 @@ function addWeapon() {
   weapon.trackSprite(player, 0, 0);
 
   weapon.onFire.add(addShipVelocity);
+  weapon.onFire.add(addCannonballsToList);
 
   return weapon;
 }
@@ -238,6 +230,10 @@ function addWeapon() {
 function addShipVelocity(bullet, weapon) {
   bullet.body.velocity.x += player.body.velocity.x;
   bullet.body.velocity.y += player.body.velocity.y;
+}
+
+function addCannonballsToList(bullet, weapon) {
+  cannonballs.push(bullet);
 }
 
 function createMuteButton() {
