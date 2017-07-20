@@ -1,183 +1,99 @@
-// Brunch automatically concatenates all files in your
-// watched paths. Those paths can be configured at
-// config.paths.watched in "brunch-config.js".
-//
-// However, those files will only be executed if
-// explicitly imported. The only exception are files
-// in vendor, which are never wrapped in imports and
-// therefore are always executed.
-
-// Import dependencies
-//
-// If you no longer want to use a dependency, remember
-// to also remove its path from "config.paths.watched".
 import "phoenix_html"
-
-// Import local files
-//
-// Local files can be imported directly using relative
-// paths "./socket" or full ones "web/static/js/socket".
-
 import { gameChannel } from "./socket"
 
+const WIDTH = 1920
+const HEIGHT = 1080
+const WORLD_SCALE = 2
 
-var game = new Phaser.Game(1920, 1080, Phaser.AUTO, null, { preload: preload, create: create, update: update, render: render });
+const game = new Phaser.Game(WIDTH, HEIGHT, Phaser.AUTO, null, { preload: preload, create: create, update: update, render: render })
 
 function preload() {
-
-  game.load.image('pirate', 'images/pirate.png');
-  game.load.image('mute', 'images/mute.png');
-  game.load.image('fullscreen', 'images/fullscreen.png');
-  game.load.audio('chantey', 'sounds/pirates.wav');
-
+  game.load.image('pirate', 'images/pirate.png')
+  game.load.image('mute', 'images/mute.png')
+  game.load.image('fullscreen', 'images/fullscreen.png')
+  game.load.audio('chantey', 'sounds/pirates.wav')
 }
 
-var player;
-let chantey;
-var gameState = [];
-var spriteCache = [];
-var wrapMatrix = [];
+let player
+let chantey
+let gameState = []
+let spriteCache = {}
 
 function create() {
-  setupScaling();
+  setupScaling()
 
-  game.stage.backgroundColor = "#0000FF";
-  createMuteButton();
+  game.stage.backgroundColor = "#0000FF"
+  createMuteButton()
 
-  // TODO: the following line is for development purposes only;
+  // TODO: the following line is for development purposes only
   // remove this before releasing game
-  game.stage.disableVisibilityChange = true;
+  game.stage.disableVisibilityChange = true
 
-  player = addSprite();
+  player = addSprite()
 
-  game.world.setBounds(0, 0, 2500, 2500);
-  game.camera.follow(player);
-  game.camera.bounds = null;
+  game.world.setBounds(0, 0, WIDTH * WORLD_SCALE, HEIGHT * WORLD_SCALE)
+  game.camera.follow(player)
 
   gameChannel.on("state_tick", ({ state }) => {
-    gameState = state;
+    gameState = state
   })
-
-  for (let [ix, x] of [0 - game.world.bounds.width, 0, game.world.bounds.width].entries())
-    for (let [iy, y] of [0 - game.world.bounds.height, 0, game.world.bounds.height].entries())
-      wrapMatrix[ix * 3 + iy] = { x: x, y: y };
 }
 
-const trailInterval = 5;
-var trailCounter = trailInterval;
+const trailInterval = 5
+var trailCounter = trailInterval
 
 function update() {
-
   /// Input
-  game.physics.arcade.moveToPointer(player, 400);
-  player.rotation = game.physics.arcade.angleToPointer(player);
-  if (Phaser.Rectangle.contains(player.body, game.input.worldX, game.input.worldY)) {
-    player.body.velocity.setTo(0, 0);
-  }
-
-  // Drop disconnected sprites
-  for (let charId in spriteCache) {
-    if (gameState.every(c => c.id != charId)) {
-      for (let sprite of spriteCache[charId]) {
-        sprite.body = null;
-        sprite.destroy();
-      }
-      spriteCache.splice(charId, 1);
-    }
-  }
-
+  handleInput()
   // Update and cache connected sprites
-  for (let char of gameState) {
-    let spriteMatrix = spriteCache[char.id] = spriteCache[char.id] || addSpriteMatrix();
-    for (let [i, m] of wrapMatrix.entries()) {
-      let sprite = spriteMatrix[i];
-      sprite.x = char.pos.x + m.x;
-      sprite.y = char.pos.y + m.y;
-      sprite.rotation = char.rot;
-    }
-  }
-
-  if (trailCounter++ > trailInterval) {
-    trailCounter = 0;
-
-    for (let pos of gameState.map(c => c.pos).concat(player)) {
-      // Draw trail
-      let trail = game.add.graphics(0, 0);
-      for (let x of [0 - game.world.bounds.width, 0, game.world.bounds.width])
-        for (let y of [0 - game.world.bounds.height, 0, game.world.bounds.height]) {
-          trail.beginFill(0xffffff);
-          trail.drawCircle(x + pos.x, y + pos.y, 3);
-          trail.endFill();
-        }
-      setTimeout(() => trail.destroy(), 3000); // Keep trail 3 seconds long
-    }
-  }
-
-  // Wrap player into game world
-  const boundsWidth = game.world.bounds.width;
-  const boundsHeight = game.world.bounds.height;
-  if (player.x > boundsWidth)
-    player.x = player.x - boundsWidth;
-  if (player.x < 0)
-    player.x = boundsWidth + player.x;
-  if (player.y > boundsHeight)
-    player.y = player.y - boundsHeight;
-  if (player.y < 0)
-    player.y = boundsHeight + player.y;
-
-  pushStateToServer();
+  cleanDisconnectedPlayers()
+  // TODO bundle trails in with player and enemy updating, use weapons module
+  updateEnemies()
+  // Drop disconnected sprites
+  updateTrails()
+  // update game server with our own view of the world, whatever that is
+  pushStateToServer()
 }
 
 function render() {
-
+  // Add post-update rendering here, probably not needed except for debugging
 }
 
 function pushStateToServer() {
-  const { offsetX, offsetY, body: { rotation, position: { x, y } } } = player;
+  const { offsetX, offsetY, body: { rotation, position: { x, y } } } = player
   gameChannel.push("player_state", { pos: { x: x + offsetX, y: y + offsetY }, rot: Phaser.Math.degToRad(rotation) })
 }
 
 function addSprite() {
-  let sprite = game.add.sprite(game.world.centerX, game.world.centerY, 'pirate');
-  sprite.anchor.set(0.5);
-  game.physics.enable(sprite, Phaser.Physics.ARCADE);
-  sprite.body.setCircle(sprite.width / 2, 0, 0);
-  return sprite;
-}
-
-function addSpriteMatrix() {
-  let matrix = [];
-  for (let i = 0; i < wrapMatrix.length; i++)
-    matrix.push(addSprite());
-  return matrix;
+  let sprite = game.add.sprite(game.world.centerX, game.world.centerY, 'pirate')
+  sprite.anchor.set(0.5)
+  game.physics.enable(sprite, Phaser.Physics.ARCADE)
+  sprite.body.setCircle(sprite.width / 2, 0, 0)
+  return sprite
 }
 
 function createMuteButton() {
   // TODO get better mute button asset, size it correctly, add frames
-  const muteButton = game.add.button(10, 10, 'mute', () => chantey.mute = !chantey.mute);
-  muteButton.height = 100;
-  muteButton.width = 100;
+  const muteButton = game.add.button(10, 10, 'mute', () => chantey.mute = !chantey.mute)
+  muteButton.height = 100
+  muteButton.width = 100
   muteButton.fixedToCamera = true
-  chantey = game.add.audio('chantey');
-  chantey.loopFull(0.3);
-  chantey.mute = true; // remember initial mute state
+  chantey = game.add.audio('chantey')
+  chantey.loopFull(0.3)
+  chantey.mute = true // remember initial mute state
 }
 function setupScaling() {
   // configure device-specific settings
   if (game.device.desktop) { // desktop
-    setupChat();
+    // setupChat()
   } else { // mobile
 
-    // TEMP no need to hide chat on mobile once it's fixed
-    const chat = document.querySelector("#chat");
-    chat.hidden = true;
-    // END TEMP
   }
 
   // configure fullscreen
   if (game.scale.compatibility.supportsFullScreen) {
-    game.scale.fullScreenScaleMode = Phaser.ScaleManager.SHOW_ALL;
-    createFullScreenButton();
+    game.scale.fullScreenScaleMode = Phaser.ScaleManager.SHOW_ALL
+    createFullScreenButton()
   }
 
   Object.assign(game.scale, {
@@ -188,49 +104,97 @@ function setupScaling() {
 }
 
 function lockOrientationWhenSupported() {
-  screen.orientation.lock('landscape').catch(err => { /* not supported, so do nothing */ });
+  screen.orientation.lock('landscape').catch(err => { /* not supported, so do nothing */ })
 }
 
 function createFullScreenButton() {
   // TODO get better mute button asset, size it correctly, add frames
-  const fullscreenButton = game.add.button(10, game.world.bounds.height, 'fullscreen', toggleFullScreen);
-  fullscreenButton.anchor.y = 1;
-  fullscreenButton.height = 100;
-  fullscreenButton.width = 100;
+  const fullscreenButton = game.add.button(10, game.world.bounds.height, 'fullscreen', toggleFullScreen)
+  fullscreenButton.anchor.y = 1
+  fullscreenButton.height = 100
+  fullscreenButton.width = 100
   fullscreenButton.fixedToCamera = true
 }
 
 function toggleFullScreen() {
   if (game.scale.isFullScreen) {
-    game.scale.stopFullScreen();
+    game.scale.stopFullScreen()
   }
   else {
-    game.scale.startFullScreen(false);
+    game.scale.startFullScreen(false)
   }
 }
 
-// TODO: make the chat part of the Phaser Game
-function setupChat() {
-  let chatInput = document.querySelector("#chat-input")
-  chatInput.focus();
-  let messagesContainer = document.querySelector("#messages")
+function handleInput() {
+  game.physics.arcade.moveToPointer(player, 400)
+  player.rotation = game.physics.arcade.angleToPointer(player)
+  if (Phaser.Rectangle.contains(player.body, game.input.worldX, game.input.worldY)) {
+    player.body.velocity.setTo(0, 0)
+  }
+}
 
-  chatInput.addEventListener("keypress", event => {
-    if (event.keyCode === 13) {
-      const message = chatInput.value.trim();
-      if (message !== '') {
-        gameChannel.push("new_chatmsg", { body: chatInput.value })
-        chatInput.value = ""
-      }
+function cleanDisconnectedPlayers() {
+  const enemyIds = gameState.map(({ id }) => id)
+  Object.keys(spriteCache).forEach(id => {
+    if (!enemyIds.includes(id)) {
+      spriteCache[id].destroy()
+      delete spriteCache[id]
     }
-  })
-
-  gameChannel.on("new_chatmsg", payload => {
-    let messageItem = document.createElement("li");
-    let now = new Date();
-    messageItem.innerText = `[${now.getHours()}:${(now.getMinutes() < 10 ? '0' : '') + now.getMinutes()}] ${payload.user}: ${payload.body}`;
-    messagesContainer.insertBefore(messageItem, messagesContainer.firstChild);
-    setTimeout(() => messagesContainer.removeChild(messageItem), 8000);
   })
 }
 
+function updateEnemies() {
+  for (let enemy of gameState) {
+    const { id, rot, pos: { x, y } } = enemy
+    spriteCache[id] = spriteCache[id] || addSprite()
+    spriteCache[id].x = x
+    spriteCache[id].y = y
+    spriteCache[id].rotation = rot
+  }
+}
+
+function updateTrails() {
+  if (trailCounter++ > trailInterval) {
+    trailCounter = 0
+
+    for (let { x, y } of gameState.map(({ pos }) => pos).concat(player)) {
+      // Draw trail
+      let trail = game.add.graphics(0, 0)
+      trail.beginFill(0xffffff)
+      trail.drawCircle(x, y, 3)
+      trail.endFill()
+      setTimeout(() => trail.destroy(), 3000) // Keep trail 3 seconds long
+    }
+  }
+}
+
+// TODO For debugging only, pls remove later
+function p(x) {
+  console.log(x)
+}
+
+
+// // TODO: make the chat part of the Phaser Game
+// function setupChat() {
+//   let chatInput = document.querySelector("#chat-input")
+//   chatInput.focus()
+//   let messagesContainer = document.querySelector("#messages")
+
+//   chatInput.addEventListener("keypress", event => {
+//     if (event.keyCode === 13) {
+//       const message = chatInput.value.trim()
+//       if (message !== '') {
+//         gameChannel.push("new_chatmsg", { body: chatInput.value })
+//         chatInput.value = ""
+//       }
+//     }
+//   })
+
+//   gameChannel.on("new_chatmsg", payload => {
+//     let messageItem = document.createElement("li")
+//     let now = new Date()
+//     messageItem.innerText = `[${now.getHours()}:${(now.getMinutes() < 10 ? '0' : '') + now.getMinutes()}] ${payload.user}: ${payload.body}`
+//     messagesContainer.insertBefore(messageItem, messagesContainer.firstChild)
+//     setTimeout(() => messagesContainer.removeChild(messageItem), 8000)
+//   })
+// }

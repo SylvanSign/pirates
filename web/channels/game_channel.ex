@@ -12,11 +12,6 @@ defmodule Pirates.GameChannel do
     {:error, %{reason: "unauthorized"}}
   end
 
-  def handle_in("new_chatmsg", %{"body" => body}, socket) do
-    broadcast! socket, "new_chatmsg", %{body: body, user: socket.assigns.id}
-    {:noreply, socket}
-  end
-
   def handle_in("player_state", state, socket) do
     full_state = parse_state_struct(state)
     full_state = %{full_state | id: socket.assigns.id}
@@ -43,4 +38,9 @@ defmodule Pirates.GameChannel do
       end
     end
   end
+
+  # def handle_in("new_chatmsg", %{"body" => body}, socket) do
+  #   broadcast! socket, "new_chatmsg", %{body: body, user: socket.assigns.id}
+  #   {:noreply, socket}
+  # end
 end
