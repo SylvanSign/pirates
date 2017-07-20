@@ -46,7 +46,7 @@ function create() {
 
   // TODO: the following line is for development purposes only;
   // remove this before releasing game
-  // game.stage.disableVisibilityChange = true;
+  game.stage.disableVisibilityChange = true;
 
   player = addSprite();
 
