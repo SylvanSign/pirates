@@ -26,6 +26,9 @@ let spriteCache = {}
 function create() {
   setupScaling()
 
+  game.time.advancedTiming = true
+  game.time.desiredFps = 60
+
   game.stage.backgroundColor = "#0000FF"
   createMuteButton()
 
