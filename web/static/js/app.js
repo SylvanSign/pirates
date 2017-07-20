@@ -49,7 +49,15 @@ function create() {
 const trailInterval = 5
 var trailCounter = trailInterval
 
+let frameCounter = 0
+console.time("60frames")
+
 function update() {
+  if (++frameCounter == 60) {
+    console.timeEnd("60frames")
+    console.time("60frames")
+    frameCounter = 0
+  }
   /// Input
   handleInput()
   // Update and cache connected sprites
