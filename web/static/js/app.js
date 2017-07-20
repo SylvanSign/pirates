@@ -5,6 +5,10 @@ const WIDTH = 1920
 const HEIGHT = 1080
 const WORLD_SCALE = 2
 
+const WORLD_WIDTH = WIDTH * WORLD_SCALE
+const WORLD_HEIGHT = HEIGHT * WORLD_SCALE
+
+
 const game = new Phaser.Game(WIDTH, HEIGHT, Phaser.AUTO, null, { preload: preload, create: create, update: update, render: render })
 
 function preload() {
@@ -29,9 +33,9 @@ function create() {
   // remove this before releasing game
   game.stage.disableVisibilityChange = true
 
-  player = addSprite()
+  player = addSprite({ randomizePosition: true })
 
-  game.world.setBounds(0, 0, WIDTH * WORLD_SCALE, HEIGHT * WORLD_SCALE)
+  game.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
   game.camera.follow(player)
 
   gameChannel.on("state_tick", ({ state }) => {
@@ -64,8 +68,14 @@ function pushStateToServer() {
   gameChannel.push("player_state", { pos: { x: x + offsetX, y: y + offsetY }, rot: Phaser.Math.degToRad(rotation) })
 }
 
-function addSprite() {
-  let sprite = game.add.sprite(game.world.centerX, game.world.centerY, 'pirate')
+function addSprite({ randomizePosition = false } = {}) {
+  let x = game.world.centerX
+  let y = game.world.centerY
+  if (randomizePosition) {
+    x = Math.random() * WORLD_WIDTH
+    y = Math.random() * WORLD_HEIGHT
+  }
+  let sprite = game.add.sprite(x, y, 'pirate')
   sprite.anchor.set(0.5)
   game.physics.enable(sprite, Phaser.Physics.ARCADE)
   sprite.body.setCircle(sprite.width / 2, 0, 0)
