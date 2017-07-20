@@ -154,6 +154,15 @@ function render() {
 }
 
 function pushStateToServer() {
+  let balls = []
+  for (let ball in cannonballs) {
+    balls.push({
+      position: {
+        x: ball.x,
+        y: ball.y
+      }
+    })
+  }
   const {
     offsetX,
     offsetY,
@@ -166,11 +175,14 @@ function pushStateToServer() {
     }
   } = player;
   gameChannel.push("player_state", {
-    pos: {
-      x: x + offsetX,
-      y: y + offsetY
+    ship: {
+      pos: {
+        x: x + offsetX,
+        y: y + offsetY
+      },
+      rot: Phaser.Math.degToRad(rotation)
     },
-    rot: Phaser.Math.degToRad(rotation)
+    cannonballs: balls
   })
 }
 
