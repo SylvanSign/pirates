@@ -9,7 +9,7 @@ defmodule Pirates.GameServer.Factory do
 
     def init([]) do
         children = [        
-            worker(Pirates.GameServer.Instance, [], restart: :transient),
+            worker(Pirates.GameServer.Instance, [], restart: :temporary),
         ]
         supervise(children, strategy: :simple_one_for_one)        
     end
