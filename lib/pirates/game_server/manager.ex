@@ -17,7 +17,7 @@ defmodule Pirates.GameServer.Manager do
         GenServer.start_link(@name, :ok, name: @name)
     end
 
-    def get_available_server do
+    def next_available_server do
         GenServer.call(@name, :next)
     end
 
