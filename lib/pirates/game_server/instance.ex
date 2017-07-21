@@ -106,7 +106,7 @@ defmodule Pirates.GameServer.Instance do
 
   def handle_info(:tick, table) do
     {pids, states} = Pirates.GameServer.Instance.state(table)
-    pids |> Enum.each(fn pid -> send(pid, {:state_tick, states}) end)
+    Enum.each(pids, fn pid -> send(pid, {:state_tick, states}) end)
     {:noreply, table}
   end
 
