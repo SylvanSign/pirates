@@ -1,10 +1,9 @@
 defmodule Pirates.GameChannel do
   use Phoenix.Channel
   alias Pirates.GameServer.Instance.State
-  require Logger
 
   def join("game:lobby", _message, socket) do
-    {:ok, server} = Pirates.GameServer.Manager.get_available_server()
+    {:ok, server} = Pirates.GameServer.Manager.next_available_server()
     {:ok, table} = Pirates.GameServer.Instance.register(server)
     
     {:ok, socket |>

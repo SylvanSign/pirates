@@ -17,7 +17,7 @@ defmodule Pirates.GameServer.Manager do
         GenServer.start_link(@name, :ok, name: @name)
     end
 
-    def get_available_server do
+    def next_available_server do
         GenServer.call(@name, :next)
     end
 
@@ -31,9 +31,10 @@ defmodule Pirates.GameServer.Manager do
   end
 
   def handle_call(:next, _from, servers) do
-    server = servers |>
-        Enum.filter(fn (s) -> count(s) < @max_players_per_server end) |>
-        Enum.min_by(&count/1, fn -> create_server() end)
+    server = 
+        servers 
+        |> Enum.filter(fn (s) -> count(s) < @max_players_per_server end) 
+        |> Enum.min_by(&count/1, fn -> create_server() end)
     {:reply, {:ok, server}, [server | servers]}
   end
 
@@ -49,7 +50,7 @@ defmodule Pirates.GameServer.Manager do
 
   defp create_server do
     {:ok, server} = Supervisor.start_child(Pirates.GameServer.Factory, [])
-    Process.monitor server
+    Process.monitor(server)
     server
   end
 

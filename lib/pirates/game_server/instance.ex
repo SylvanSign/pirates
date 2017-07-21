@@ -106,7 +106,7 @@ defmodule Pirates.GameServer.Instance do
 
   def handle_info(:tick, table) do
     {pids, states} = Pirates.GameServer.Instance.state(table)
-    pids |> Enum.each(fn pid -> send(pid, {:state_tick, states}) end)
+    Enum.each(pids, fn pid -> send(pid, {:state_tick, states}) end)
     {:noreply, table}
   end
 
@@ -115,7 +115,7 @@ defmodule Pirates.GameServer.Instance do
     :ets.delete(table, pid)
     IO.puts "Just deleted state for #{inspect(pid)}"
     if count(table) == 0 do
-      Process.exit(self(), "Server was empty.")
+      Process.exit("Server was empty.")
     end
     {:noreply, table}
   end
