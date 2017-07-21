@@ -26,7 +26,7 @@ defmodule Pirates.GameServer.Manager do
   ####################
 
   def init(:ok) do
-      servers = []
+      servers = MapSet.new()
       {:ok, servers}
   end
 
@@ -35,13 +35,12 @@ defmodule Pirates.GameServer.Manager do
         servers 
         |> Enum.filter(fn (s) -> count(s) < @max_players_per_server end) 
         |> Enum.min_by(&count/1, fn -> create_server() end)
-    {:reply, {:ok, server}, [server | servers]}
+    {:reply, {:ok, server}, MapSet.put(servers, server)}
   end
 
   # handle dropped servers
   def handle_info({:DOWN, _ref, :process, pid, _reason}, servers) do
-      servers = List.delete(servers, pid)
-    {:noreply, servers}
+    {:noreply, MapSet.delete(servers, pid)}
   end
 
   defp count(s) do
