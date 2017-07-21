@@ -1,0 +1,68 @@
+language: elixir
+
+elixir:
+  - 1.4
+
+before_install:
+  - nvm install 8
+
+cache:
+  directories:
+    - _build
+    - deps
+
+script:
+
+  - npm install
+  - npm install ./deps/phoenix
+  - npm install ./deps/phoenix_html
+  - mix deps.get --only prod
+  - MIX_ENV=prod mix compile
+  - brunch build --production
+  - mix phoenix.digest
+
+deploy:
+  - provider: heroku
+    app: pirates-master
+    buildpack: https://github.com/HashNuke/heroku-buildpack-elixir.git
+    api-key:
+      - secure: "Gh8JlB2kgbObf+d4aFUOakw/PHFf3LTHScPIX5r8SwqEMkyVrLAwADibtW8nQwxtxKR3/bgyNRwt4o3k0Dm+tBo36A1ed8KiP57MpF2qHhQVpVJ4OwZozbrGlUWuNt5dWJiBfS7gR9MNAIkRhoLttIQV+HbMeUbJWiYtt6QY6C5OqLATDSMcWgIeJXC2Aa5J2mB28rQ+bYjOXEyJk/02zF77tthhaitBqv7ralL38gXRuodqVZUD5XxMxS+x0LRrfzh7b+mQpn71fVIRQGfltNozF0k2XfcEM9BnVcXzcRoxKcnDkqUrLVWVvENd3fUyL0JqViFbCAtQkgH2Lt/hBQX2pY1FmKVGRbiAHmfs7tHcZwJfuNdXM+t84N4V6ZK662X3V/jG724ATankZ8OBJ7/pXvrTGfLFQ4IdxxVY8HNLrcfh+9hdAKSq2QMzz9LZiEgNAJVyqYU19FiTwgoeuOEy0Kc6aFYOUG02Sbgd1f7Jh1O2jWfFfcNspwQnJ2UrTYN/GNPZ4gm9d99vI9jD5VvCnG4jnfSvUUfw7QQJVxFSk6bKEUrK2AJWTSLEcvoj4nteA+St4yknMl5VwGb+O5tc7LnZ3QBa158BPIvBnrSJyS9rdleDcUuYWvChE9Cz701TVG3SD+LyXS2LU/MR209aWhMQaAbH/ZVQtU6hOXk="
+    skip_cleanup: true
+    on:
+      branch: master
+
+  - provider: heroku
+    app: clm-pirates
+    api-key:
+      - secure: "Gh8JlB2kgbObf+d4aFUOakw/PHFf3LTHScPIX5r8SwqEMkyVrLAwADibtW8nQwxtxKR3/bgyNRwt4o3k0Dm+tBo36A1ed8KiP57MpF2qHhQVpVJ4OwZozbrGlUWuNt5dWJiBfS7gR9MNAIkRhoLttIQV+HbMeUbJWiYtt6QY6C5OqLATDSMcWgIeJXC2Aa5J2mB28rQ+bYjOXEyJk/02zF77tthhaitBqv7ralL38gXRuodqVZUD5XxMxS+x0LRrfzh7b+mQpn71fVIRQGfltNozF0k2XfcEM9BnVcXzcRoxKcnDkqUrLVWVvENd3fUyL0JqViFbCAtQkgH2Lt/hBQX2pY1FmKVGRbiAHmfs7tHcZwJfuNdXM+t84N4V6ZK662X3V/jG724ATankZ8OBJ7/pXvrTGfLFQ4IdxxVY8HNLrcfh+9hdAKSq2QMzz9LZiEgNAJVyqYU19FiTwgoeuOEy0Kc6aFYOUG02Sbgd1f7Jh1O2jWfFfcNspwQnJ2UrTYN/GNPZ4gm9d99vI9jD5VvCnG4jnfSvUUfw7QQJVxFSk6bKEUrK2AJWTSLEcvoj4nteA+St4yknMl5VwGb+O5tc7LnZ3QBa158BPIvBnrSJyS9rdleDcUuYWvChE9Cz701TVG3SD+LyXS2LU/MR209aWhMQaAbH/ZVQtU6hOXk="
+    skip_cleanup: true
+    on:
+      all_branches: true
+      condition: "$TRAVIS_BRANCH =~ ^clm/"
+
+  - provider: heroku
+    app: jdl-pirates
+    api-key:
+      - secure: "Gh8JlB2kgbObf+d4aFUOakw/PHFf3LTHScPIX5r8SwqEMkyVrLAwADibtW8nQwxtxKR3/bgyNRwt4o3k0Dm+tBo36A1ed8KiP57MpF2qHhQVpVJ4OwZozbrGlUWuNt5dWJiBfS7gR9MNAIkRhoLttIQV+HbMeUbJWiYtt6QY6C5OqLATDSMcWgIeJXC2Aa5J2mB28rQ+bYjOXEyJk/02zF77tthhaitBqv7ralL38gXRuodqVZUD5XxMxS+x0LRrfzh7b+mQpn71fVIRQGfltNozF0k2XfcEM9BnVcXzcRoxKcnDkqUrLVWVvENd3fUyL0JqViFbCAtQkgH2Lt/hBQX2pY1FmKVGRbiAHmfs7tHcZwJfuNdXM+t84N4V6ZK662X3V/jG724ATankZ8OBJ7/pXvrTGfLFQ4IdxxVY8HNLrcfh+9hdAKSq2QMzz9LZiEgNAJVyqYU19FiTwgoeuOEy0Kc6aFYOUG02Sbgd1f7Jh1O2jWfFfcNspwQnJ2UrTYN/GNPZ4gm9d99vI9jD5VvCnG4jnfSvUUfw7QQJVxFSk6bKEUrK2AJWTSLEcvoj4nteA+St4yknMl5VwGb+O5tc7LnZ3QBa158BPIvBnrSJyS9rdleDcUuYWvChE9Cz701TVG3SD+LyXS2LU/MR209aWhMQaAbH/ZVQtU6hOXk="
+    skip_cleanup: true
+    on:
+      all_branches: true
+      condition: "$TRAVIS_BRANCH =~ ^jdl/"
+
+  - provider: heroku
+    app: jake-pirates
+    api-key:
+      - secure: "Gh8JlB2kgbObf+d4aFUOakw/PHFf3LTHScPIX5r8SwqEMkyVrLAwADibtW8nQwxtxKR3/bgyNRwt4o3k0Dm+tBo36A1ed8KiP57MpF2qHhQVpVJ4OwZozbrGlUWuNt5dWJiBfS7gR9MNAIkRhoLttIQV+HbMeUbJWiYtt6QY6C5OqLATDSMcWgIeJXC2Aa5J2mB28rQ+bYjOXEyJk/02zF77tthhaitBqv7ralL38gXRuodqVZUD5XxMxS+x0LRrfzh7b+mQpn71fVIRQGfltNozF0k2XfcEM9BnVcXzcRoxKcnDkqUrLVWVvENd3fUyL0JqViFbCAtQkgH2Lt/hBQX2pY1FmKVGRbiAHmfs7tHcZwJfuNdXM+t84N4V6ZK662X3V/jG724ATankZ8OBJ7/pXvrTGfLFQ4IdxxVY8HNLrcfh+9hdAKSq2QMzz9LZiEgNAJVyqYU19FiTwgoeuOEy0Kc6aFYOUG02Sbgd1f7Jh1O2jWfFfcNspwQnJ2UrTYN/GNPZ4gm9d99vI9jD5VvCnG4jnfSvUUfw7QQJVxFSk6bKEUrK2AJWTSLEcvoj4nteA+St4yknMl5VwGb+O5tc7LnZ3QBa158BPIvBnrSJyS9rdleDcUuYWvChE9Cz701TVG3SD+LyXS2LU/MR209aWhMQaAbH/ZVQtU6hOXk="
+    skip_cleanup: true
+    on:
+      all_branches: true
+      condition: "$TRAVIS_BRANCH =~ ^jake/"
+
+  - provider: heroku
+    app: zak-pirates
+    api-key:
+      - secure: "Gh8JlB2kgbObf+d4aFUOakw/PHFf3LTHScPIX5r8SwqEMkyVrLAwADibtW8nQwxtxKR3/bgyNRwt4o3k0Dm+tBo36A1ed8KiP57MpF2qHhQVpVJ4OwZozbrGlUWuNt5dWJiBfS7gR9MNAIkRhoLttIQV+HbMeUbJWiYtt6QY6C5OqLATDSMcWgIeJXC2Aa5J2mB28rQ+bYjOXEyJk/02zF77tthhaitBqv7ralL38gXRuodqVZUD5XxMxS+x0LRrfzh7b+mQpn71fVIRQGfltNozF0k2XfcEM9BnVcXzcRoxKcnDkqUrLVWVvENd3fUyL0JqViFbCAtQkgH2Lt/hBQX2pY1FmKVGRbiAHmfs7tHcZwJfuNdXM+t84N4V6ZK662X3V/jG724ATankZ8OBJ7/pXvrTGfLFQ4IdxxVY8HNLrcfh+9hdAKSq2QMzz9LZiEgNAJVyqYU19FiTwgoeuOEy0Kc6aFYOUG02Sbgd1f7Jh1O2jWfFfcNspwQnJ2UrTYN/GNPZ4gm9d99vI9jD5VvCnG4jnfSvUUfw7QQJVxFSk6bKEUrK2AJWTSLEcvoj4nteA+St4yknMl5VwGb+O5tc7LnZ3QBa158BPIvBnrSJyS9rdleDcUuYWvChE9Cz701TVG3SD+LyXS2LU/MR209aWhMQaAbH/ZVQtU6hOXk="
+    skip_cleanup: true
+    on:
+      all_branches: true
+      condition: "$TRAVIS_BRANCH =~ ^zak/"
