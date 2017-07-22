@@ -6,9 +6,10 @@ defmodule Pirates.GameChannel do
     {:ok, server} = Pirates.GameServer.Manager.next_available_server()
     {:ok, table} = Pirates.GameServer.Instance.register(server)
     
-    {:ok, socket |>
-      assign(:table, table) |> 
-      assign(:id, System.unique_integer([:positive]))}
+    socket = socket 
+        |> assign(:table, table)
+        |> assign(:id, System.unique_integer([:positive]))
+    {:ok, socket}
   end
   def join("game:" <> _private_room_id, _params, _socket) do
     {:error, %{reason: "unauthorized"}}

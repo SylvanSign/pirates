@@ -39,12 +39,12 @@ defmodule Pirates.GameServer.Manager do
   end
 
   # handle dropped servers
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, servers) do
-    {:noreply, MapSet.delete(servers, pid)}
+  def handle_info({:DOWN, _ref, :process, server, _reason}, servers) do
+    {:noreply, MapSet.delete(servers, server)}
   end
 
-  defp count(s) do
-      Instance.count(Instance.table(s))
+  defp count(server) do
+      server |> Instance.table |> Instance.count
   end
 
   defp create_server do
