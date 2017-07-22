@@ -115,9 +115,10 @@ defmodule Pirates.GameServer.Instance do
     :ets.delete(table, pid)
     IO.puts "Just deleted state for #{inspect(pid)}"
     if count(table) == 0 do
-      exit(:shutdown)
+      {:stop, :shutdown, table}
+    else
+      {:noreply, table}
     end
-    {:noreply, table}
   end
 
   # handle any unexpected mail
