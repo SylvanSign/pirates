@@ -17,7 +17,7 @@ config :pirates, Pirates.Endpoint,
   force_ssl: [rewrite_on: [:x_forwarded_proto]],
   cache_static_manifest: "priv/static/manifest.json",
   check_origin: [
-    "https://pirates-deploy.herokuapp.com/",
+    "https://pirates-master.herokuapp.com/",
     "https://clm-pirates.herokuapp.com/",
     "https://jdl-pirates-jb.herokuapp.com/",
     "https://jake-pirates.herokuapp.com/",
