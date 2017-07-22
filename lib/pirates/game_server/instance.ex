@@ -1,10 +1,12 @@
-defmodule Pirates.GameServer do
+defmodule Pirates.GameServer.Instance do
   use GenServer
   @moduledoc """
   Functions to handle Pirates game servers.
   """
 
   @name __MODULE__
+  @ticks_per_second 60
+  @tick_timer_in_ms div(1 * 1_000, @ticks_per_second)
 
   defmodule State do
     @enforce_keys [:id, :pos, :rot]
@@ -23,23 +25,16 @@ defmodule Pirates.GameServer do
   end
 
   @doc """
-  Starts up a new game server and registers it under `@name`
-  """
-  def start_link(:named) do
-    GenServer.start_link(@name, :ok, name: @name)
-  end
-
-  @doc """
   Registers the calling process on the given game server
   """
-  def register(pid \\ @name) do
+  def register(pid) do
     GenServer.call(pid, :register)
   end
 
   @doc """
   Returns the table id of the given game server
   """
-  def table(pid \\ @name) do
+  def table(pid) do
     GenServer.call(pid, :table)
   end
 
@@ -70,6 +65,13 @@ defmodule Pirates.GameServer do
     :ets.foldl(folding_fn, {[], []}, table)
   end
 
+  @doc """
+  Gets number of connections to instance
+  """
+  def count(table) do
+    :ets.info(table, :size)
+  end
+
   ####################
   # Server Callbacks #
   ####################
@@ -81,6 +83,10 @@ defmodule Pirates.GameServer do
       write_concurrency: true
     ]
     table = :ets.new(:states, opts)
+
+    # init timer
+    :timer.send_interval(@tick_timer_in_ms, :tick)
+
     {:ok, table}
   end
 
@@ -98,11 +104,21 @@ defmodule Pirates.GameServer do
     {:reply, table, table}
   end
 
+  def handle_info(:tick, table) do
+    {pids, states} = Pirates.GameServer.Instance.state(table)
+    Enum.each(pids, fn pid -> send(pid, {:state_tick, states}) end)
+    {:noreply, table}
+  end
+
   # handle notifications of dead monitored processes
   def handle_info({:DOWN, _ref, :process, pid, _reason}, table) do
     :ets.delete(table, pid)
     IO.puts "Just deleted state for #{inspect(pid)}"
-    {:noreply, table}
+    if count(table) == 0 do
+      {:stop, :shutdown, table}
+    else
+      {:noreply, table}
+    end
   end
 
   # handle any unexpected mail
