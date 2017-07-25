@@ -8,6 +8,9 @@ const WORLD_SCALE = 2
 const WORLD_WIDTH = WIDTH * WORLD_SCALE
 const WORLD_HEIGHT = HEIGHT * WORLD_SCALE
 
+const PLAYER_ANGULAR_VELOCITY = Phaser.Math.degToRad(3);
+const PLAYER_MOVEMENT_VELOCITY = 200;
+
 
 const game = new Phaser.Game(WIDTH, HEIGHT, Phaser.AUTO, null, { preload: preload, create: create, update: update, render: render })
 
@@ -136,8 +139,9 @@ function toggleFullScreen() {
 }
 
 function handleInput() {
-  game.physics.arcade.moveToPointer(player, 400)
-  player.rotation = game.physics.arcade.angleToPointer(player)
+  let diff = Phaser.Math.wrapAngle(game.physics.arcade.angleToPointer(player) - player.rotation, true)
+  player.rotation += Math.min(Math.abs(diff), PLAYER_ANGULAR_VELOCITY) * Math.sign(diff)
+  game.physics.arcade.velocityFromRotation(player.rotation, PLAYER_MOVEMENT_VELOCITY, player.body.velocity)
   if (Phaser.Rectangle.contains(player.body, game.input.worldX, game.input.worldY)) {
     player.body.velocity.setTo(0, 0)
   }
