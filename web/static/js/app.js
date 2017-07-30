@@ -12,7 +12,7 @@ const PLAYER_ANGULAR_VELOCITY = Phaser.Math.degToRad(2);
 const PLAYER_MOVEMENT_VELOCITY = 400;
 
 
-const game = new Phaser.Game(WIDTH, HEIGHT, Phaser.CANVAS, null, { preload: preload, create: create, update: update, render: render })
+const game = new Phaser.Game(WIDTH, HEIGHT, Phaser.AUTO, null, { preload: preload, create: create, update: update, render: render })
 
 function preload() {
   game.load.image('pirate', 'images/pirate.png')
