@@ -9,7 +9,7 @@ const WORLD_WIDTH = WIDTH * WORLD_SCALE
 const WORLD_HEIGHT = HEIGHT * WORLD_SCALE
 
 const PLAYER_ANGULAR_VELOCITY = Phaser.Math.degToRad(2);
-const PLAYER_MOVEMENT_VELOCITY = 400;
+const PLAYER_MOVEMENT_VELOCITY = 300;
 
 
 const game = new Phaser.Game(WIDTH, HEIGHT, Phaser.AUTO, null, { preload: preload, create: create, update: update, render: render })
@@ -253,7 +253,7 @@ function addWeapons(side, num = 3) {
     const weapon = game.add.weapon(1, 'cannonball');
 
     weapon.bullets.forEach((b) => {
-      b.scale.setTo(0.2, 0.2);
+      b.scale.set(0.15);
     }, this);
 
     weapon.bulletKillType = Phaser.Weapon.KILL_LIFESPAN;
