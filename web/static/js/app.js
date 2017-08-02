@@ -15,7 +15,8 @@ const PLAYER_MOVEMENT_VELOCITY = 400;
 const game = new Phaser.Game(WIDTH, HEIGHT, Phaser.AUTO, null, { preload: preload, create: create, update: update, render: render })
 
 function preload() {
-  game.load.image('pirate', 'images/pirate.png')
+  // game.load.image('pirate', 'images/pirate.png')
+  game.load.image('pirate', 'images/bigger.png')
   game.load.image('cannonball', 'images/cannonball.png');
   game.load.image('mute', 'images/mute.png')
   game.load.image('fullscreen', 'images/fullscreen.png')
@@ -108,6 +109,7 @@ function addShip() {
   let x = Math.random() * WORLD_WIDTH
   let y = Math.random() * WORLD_HEIGHT
   let sprite = game.add.sprite(x, y, 'pirate')
+  sprite.scale.set(0.4)
   sprite.anchor.set(0.5)
   game.physics.enable(sprite, Phaser.Physics.ARCADE)
   sprite.body.setCircle(sprite.width / 2, 0, 0)
