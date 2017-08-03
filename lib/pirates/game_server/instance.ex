@@ -8,10 +8,10 @@ defmodule Pirates.GameServer.Instance do
   @ticks_per_second 60
   @tick_timer_in_ms div(1 * 1_000, @ticks_per_second)
 
-  defmodule State do
-    @enforce_keys [:id, :pos, :rot]
-    defstruct [:id, :pos, :rot]
-  end
+  # defmodule State do
+  #   @enforce_keys [:id, :pos, :rot]
+  #   defstruct [:id, :pos, :rot]
+  # end
 
   ##############
   # Client API #
@@ -41,7 +41,7 @@ defmodule Pirates.GameServer.Instance do
   @doc """
   Updates state of the calling process in the given table
   """
-  def update_state(table, state = %State{}) do
+  def update_state(table, state = %{}) do
     calling_pid = self()
     case :ets.lookup(table, calling_pid) do
       [{^calling_pid, _}] ->
@@ -59,7 +59,7 @@ defmodule Pirates.GameServer.Instance do
     folding_fn = fn
       ({_key, value}, results) when value == %{} ->
         results
-      ({pid, state = %State{}}, {pids, states}) ->
+      ({pid, state = %{}}, {pids, states}) ->
         {[pid | pids], [state | states]}
     end
     :ets.foldl(folding_fn, {[], []}, table)
