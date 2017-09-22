@@ -2,9 +2,9 @@ defmodule Pirates.GameChannel do
   use Phoenix.Channel
   alias Pirates.GameServer.Manager
   alias Pirates.GameServer.Instance
-
-  def join("game:lobby", _message, socket) do
-    {:ok, server} = Manager.next_available_server()
+  
+  def join("game:" <> name, _params, socket) do
+    server = Manager.get_or_create_server(name)
     {:ok, table} = Instance.register(server)
 
     id = System.unique_integer([:positive])
@@ -12,9 +12,6 @@ defmodule Pirates.GameChannel do
         |> assign(:table, table)
         |> assign(:id, Integer.to_string(id))
     {:ok, socket}
-  end
-  def join("game:" <> _private_room_id, _params, _socket) do
-    {:error, %{reason: "unauthorized"}}
   end
 
   def handle_in("player_state", state, socket) do
@@ -26,10 +23,10 @@ defmodule Pirates.GameChannel do
 
   def handle_info({:state_tick, state}, socket) do
     # filter out the client's state from the map
-    other_state = Enum.reject state, fn %{id: id} ->
-      socket.assigns.id == id
-    end
-    push socket, "state_tick", %{state: other_state}
+    # other_state = Enum.reject state, fn %{id: id} ->
+    #   socket.assigns.id == id
+    # end
+    broadcast_from socket, "state_tick", %{state: state}
     {:noreply, socket}
   end
 
