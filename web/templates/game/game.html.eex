@@ -1,0 +1,3 @@
+<script>window.server = <%= @server %></script>
+
+<div id="game"></div>
