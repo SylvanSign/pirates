@@ -4,7 +4,7 @@ let socket = new Socket("/socket", { params: { token: window.userToken } })
 
 socket.connect()
 
-let gameChannel = socket.channel("game:lobby", {})
+let gameChannel = socket.channel("game:" + window.server, {})
 
 gameChannel.join()
   .receive("ok", resp => { console.log("Joined successfully", resp) })

@@ -20,8 +20,8 @@ defmodule Pirates.GameServer.Instance do
   @doc """
   Starts up a new game server
   """
-  def start_link do
-    GenServer.start_link(@name, :ok, [])
+  def start_link(name) do
+    GenServer.start_link(@name, name, [])
   end
 
   @doc """
@@ -76,7 +76,7 @@ defmodule Pirates.GameServer.Instance do
   # Server Callbacks #
   ####################
 
-  def init(:ok) do
+  def init(name) do
     opts = [
       :public,
       read_concurrency: true,
@@ -87,42 +87,43 @@ defmodule Pirates.GameServer.Instance do
     # init timer
     :timer.send_interval(@tick_timer_in_ms, :tick)
 
-    {:ok, table}
+    {:ok, {name, table}}
   end
 
-  def handle_call(:register, {from_pid, _}, table) do
+  def handle_call(:register, {from_pid, _}, {name, table}) do
     if :ets.insert_new(table, {from_pid, %{}}) do
       Process.monitor(from_pid)
       IO.puts "Just registered #{inspect(from_pid)}"
-      {:reply, {:ok, table}, table}
+      {:reply, {:ok, table}, {name, table}}
     else
-      {:reply, {:error, "#{inspect(from_pid)} is already registered on this server"}, table}
+      {:reply, {:error, "#{inspect(from_pid)} is already registered on this server"}, {name, table}}
     end
   end
 
-  def handle_call(:table, _from, table) do
-    {:reply, table, table}
+  def handle_call(:table, _from, {name, table}) do
+    {:reply, table, {name, table}}
   end
 
-  def handle_info(:tick, table) do
+  def handle_info(:tick, {name, table}) do
     {pids, states} = Pirates.GameServer.Instance.state(table)
-    Enum.each(pids, fn pid -> send(pid, {:state_tick, states}) end)
-    {:noreply, table}
+    # Enum.each(pids, fn pid -> send(pid, {:state_tick, states}) end)
+    Pirates.Endpoint.broadcast("game:" <> name, "state_tick", %{state: states})
+    {:noreply, {name, table}}
   end
 
   # handle notifications of dead monitored processes
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, table) do
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, {name, table}) do
     :ets.delete(table, pid)
     IO.puts "Just deleted state for #{inspect(pid)}"
     if count(table) == 0 do
       {:stop, :shutdown, table}
     else
-      {:noreply, table}
+      {:noreply, {name, table}}
     end
   end
 
   # handle any unexpected mail
-  def handle_info(_msg, table) do
-    {:noreply, table}
+  def handle_info(_msg, {name, table}) do
+    {:noreply, {name, table}}
   end
 end
