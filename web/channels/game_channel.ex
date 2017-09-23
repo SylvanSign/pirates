@@ -4,7 +4,7 @@ defmodule Pirates.GameChannel do
   alias Pirates.GameServer.Instance
   
   def join("game:" <> name, _params, socket) do
-    server = Manager.get_or_create_server(name)
+    server = Manager.get_or_create_instance(name)
     {:ok, table} = Instance.register(server)
 
     id = System.unique_integer([:positive])
@@ -21,12 +21,21 @@ defmodule Pirates.GameChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:state_tick, state}, socket) do
-    # filter out the client's state from the map
-    # other_state = Enum.reject state, fn %{id: id} ->
-    #   socket.assigns.id == id
-    # end
-    broadcast_from socket, "state_tick", %{state: state}
+  # def handle_info({:state_tick, state}, socket) do
+  #   # filter out the client's state from the map
+  #   other_state = Enum.reject state, fn %{id: id} ->
+  #     socket.assigns.id == id
+  #   end
+  #   broadcast_from socket, "state_tick", %{state: other_state}
+  #   {:noreply, socket}
+  # end
+
+  intercept ["state_tick"]
+  def handle_out("state_tick", %{state: states}, socket) do
+    other_state = Enum.reject states, fn %{id: id} ->
+      socket.assigns.id == id
+    end
+    push socket, "state_tick", %{state: other_state}
     {:noreply, socket}
   end
 
